@@ -2,15 +2,24 @@ from import_statements import *
 
 #Putting data into database
 
-@api_view(['GET'])
+@api_view(['POST'])
 def landing_page(request):
-    token = request.GET.get('token')
+    data = request.data
+    token = data['token']
     try:
         user_data.objects.get(token = token)
         user = user_data.objects.get(token = token)
         cart_product_ids = user_cart.objects.filter(user_id = user.id).values_list('product_id',flat=True)
     except:
-        cart_product_ids = []
+        no_login_token = data['no_login_token']
+        print("no_login_token",no_login_token)
+        no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
+        print("no_login_id",no_login_id)
+        if len(no_login_id) > 0:
+            cart_product_ids = user_cart.objects.filter(no_login_id = str(no_login_id[0])).values_list('product_id',flat=True)
+            print("cart_product_ids",cart_product_ids)
+        else:           
+            cart_product_ids = []
     
     res = {}
     category_obj = categoryy.objects.annotate(
@@ -26,7 +35,7 @@ def landing_page(request):
     def splitPipe(x):
         return x.split('|')
     def cartStatusCheck(x):
-        if x in cart_product_ids:
+        if str(x) in cart_product_ids:
             return True
         else:
             return False
@@ -93,8 +102,16 @@ def single_product_view(request):
             quantity = 0
             cart_status = False
     except:
-        quantity = 0
-        cart_status = False
+        no_login_token = request.data['no_login_token']
+        no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
+        cart_product_ids = user_cart.objects.filter(no_login_id = no_login_id[0],product_id=product_id).values_list('quantity',flat=True)
+        print('cart_product_ids',cart_product_ids)
+        if len(cart_product_ids) > 0:
+            quantity = cart_product_ids[0]
+            cart_status = True
+        else:           
+            quantity = 0
+            cart_status = False
     product_details = {}
     product_details['id'] = product_info['id']
     product_details['title'] = product_info['title']
@@ -126,17 +143,26 @@ def single_product_view(request):
                                              ).to_dict(orient="records")
     return Response(res)
 
-@api_view(['GET'])
+@api_view(['POST'])
 def categoryPage(request):
-    category_id = request.GET.get('category')
+    data = request.data
+    category_id = data['category']
     category_obj = categoryy.objects.filter(id = category_id).values().last()
     res={}
     try:
-        token = request.GET.get('token')
+        token = data['token']
         user = user_data.objects.get(token = token)
         cart_product_ids = user_cart.objects.filter(user_id = user.id).values_list('product_id',flat=True)
     except:
-        cart_product_ids = []
+        no_login_token = data['no_login_token']
+        print("no_login_token",no_login_token)
+        no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
+        print("no_login_id",no_login_id)
+        if len(no_login_id) > 0:
+            cart_product_ids = user_cart.objects.filter(no_login_id = str(no_login_id[0])).values_list('product_id',flat=True)
+            print("cart_product_ids",cart_product_ids)
+        else:           
+            cart_product_ids = []
     res['category'] = category_obj['category']
     res['category_banner'] = category_obj['category_banner']
     if category_obj['category'] == 'All Products':
@@ -149,7 +175,7 @@ def categoryPage(request):
     def splitByPipe(x):
         return x.split('|')
     def cartStatusCheck(x):
-        if x in cart_product_ids:
+        if str(x) in cart_product_ids:
             return True
         else:
             return False
@@ -158,7 +184,7 @@ def categoryPage(request):
     products['weight'] = products['size'].apply(splitByPipe)
     products['price'] = products['price'].apply(splitByPipe)
     products['cart_status'] = products['id'].apply(cartStatusCheck)
-    products = products[['id','title','image','weight','price','cart_status']].to_dict(orient="records")
+    products = products[['id','title','image','weight','price','cart_status',]].to_dict(orient="records")
     res['products'] = products
     return Response(res)
 
@@ -204,6 +230,8 @@ def add_to_cart(request):
     price = data['price']
     token = data['token']
     no_login_token = data['no_login_token']
+    # print('###########',no_login_token)
+    # print('###########token',token)
     no_user_flag = False
     try:
         user = user_data.objects.get(token = token)
@@ -232,7 +260,7 @@ def add_to_cart(request):
                 'status':True,
                 'token':token,
                 'no_login_token':no_login_token,
-                'message':'product added successfully'
+                'message':'Product added successfully'
               }
     else:
         data = user_cart(
@@ -242,6 +270,7 @@ def add_to_cart(request):
                             price_per_unit = price,
                             quantity = '1',
                         )
+        data.save()
         res = {
                 'status':True,
                 'token':token,
@@ -256,6 +285,7 @@ def UserCartView(request):
     data = request.data
     token = data['token']
     no_login_token = data['no_login_token']
+    print('##################',no_login_token)
     no_user_flag = False
     res = {}
     try:
@@ -263,31 +293,274 @@ def UserCartView(request):
         user_id = user.id
     except:
         no_user_flag = True
-        no_user_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)[0]
+        try:
+            no_user_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)[0]
+        except:
+            no_user_id = 'null'
     if no_user_flag == True:
-        cartItems = user_cart.objects.filter(no_login_id = no_user_id).values('product_id','size','price_per_unit','quantity')
+        cartItems = user_cart.objects.filter(no_login_id = no_user_id).values('id','product_id','size','price_per_unit','quantity')
     else:
-        cartItems = user_cart.objects.filter(user_id = user_id).values('product_id','size','price_per_unit','quantity')
+        cartItems = user_cart.objects.filter(user_id = user_id).values('id','product_id','size','price_per_unit','quantity')
     def getProductName(x):
         return Product_data.objects.filter(id=x).values_list('title',flat=True)[0]
     def priceCalculate(up,q):
         return int(up)*int(q)
     def getProductImage(x):
         return Product_data.objects.filter(id = x).values_list('image',flat=True)[0].split(',')[0]
-    cartItems = pd.DataFrame(cartItems)
-    cartItems['name'] = cartItems['product_id'].apply(getProductName)
-    cartItems['unit_price'] = cartItems['price_per_unit']
-    cartItems['price'] = cartItems.apply(lambda x: priceCalculate(x.price_per_unit, x.quantity), axis=1)
-    cartItems['quantity'] = cartItems['quantity']
-    cartItems['image'] = cartItems['product_id'].apply(getProductImage)
-    cartItems = cartItems[['name','unit_price','price','quantity','image']].to_dict(orient='records')
-    res['cartItems'] = cartItems
+    def getProductPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['product_id']).values('size','price').last()
+        size = prod_obj['size'].split('|')        
+        price = prod_obj['price'].split('|')        
+        for i in range(len(size)):
+            if size[i] == row['size']:
+                return price[i]
+    if len(cartItems) > 0:
+        cartItems = pd.DataFrame(cartItems)
 
-    cart_total = {}
+        cartItems['id'] = cartItems['id']
+        cartItems['name'] = cartItems['product_id'].apply(getProductName)
+        cartItems['unit_price'] = cartItems.apply(getProductPrice,axis=1)
+        cartItems['price'] = cartItems.apply(lambda x: priceCalculate(x.unit_price, x.quantity), axis=1)
+        cartItems['quantity'] = cartItems['quantity']
+        cartItems['size'] = cartItems['size']
+        cartItems['image'] = cartItems['product_id'].apply(getProductImage)
+        cartItems = cartItems[['product_id','name','unit_price','price','quantity','image','size']].to_dict(orient='records')
+        res['cartItems'] = cartItems
+
+        cart_total = {}
+        cartItems = pd.DataFrame(cartItems)
+        cart_total['subtotal'] = sum(list(cartItems['price']))
+        cart_total['shipping'] = 90
+        cart_total['tax'] = 70
+        cart_total['final_price'] = cart_total['subtotal'] + cart_total['shipping'] + cart_total['tax']
+        res['cart_total'] = cart_total
+    else:
+        res['cartItems'] = cartItems
+    return Response(res)
+
+@api_view(['POST'])
+def CartUpdate(request):
+    data = request.data
+    product_id = data['prod_id']
+    size = data['size']
+    update_type = data['update_type']
+    token = data['token']
+    no_login_token = data['no_login_token']
+    try:
+        user = user_data.objects.get(token = token)
+        user_id = user.id
+        cartItems = user_cart.objects.filter(user_id = user_id).values()
+    except:
+        no_user = noLoginUser.objects.get(token = no_login_token)
+        no_login_id = no_user.id
+        cartItems = user_cart.objects.filter(no_login_id = no_login_id)
+    
+    cart_row = cartItems.filter(product_id=product_id,size=size)
+    quantity = int(cart_row.values_list('quantity',flat=True)[0])
+    
+    if update_type == '+':
+        cart_row.update(quantity = str(quantity + 1))
+        res = {
+                'status':True,
+                'message':'Quantity increased successfully'
+              }
+    elif update_type == '-':
+        if quantity > 1:
+            cart_row.update(quantity = str(quantity - 1))
+            res = {
+                    'status':True,
+                    'message':'Quantity decreased successfully'
+                  }
+        else:
+            cart_row.delete()
+            res = {
+                    'status':True,
+                    'message':'Item removed from cart'
+                  }
+    else:
+        res = {
+                    'status':False,
+                    'message':'Something went wrong'
+                  }
+    return Response(res)
+
+@api_view(['POST'])
+def CartitemDelete(request):
+    data = request.data
+    product_id = data['prod_id']
+    size = data['size']
+    token = data['token']
+    no_login_token = data['no_login_token']
+    try:
+        user = user_data.objects.get(token = token)
+        user_id = user.id
+        cartItems = user_cart.objects.filter(user_id = user_id)
+    except:
+        no_user = noLoginUser.objects.get(token = no_login_token)
+        no_login_id = no_user.id
+        cartItems = user_cart.objects.filter(no_login_id = no_login_id)
+    
+    cart_row = cartItems.filter(product_id=product_id,size=size)
+    cart_row.delete()
+    res = {
+            'status':True,
+            'message':'Item removed from cart'
+          }
+    return Response(res)
+
+@api_view(['POST'])
+def login(request):
+    data = request.data
+    no_login_token = data['no_login_token']
+    email = data['email']
+    password = data['password']
+    try:
+        user = user_data.objects.get(email = email)
+    except:
+        res = {
+                'status':False,
+                'message':'Invalid credentials'
+              }
+        return Response(res)
+    if check_password(password,user.password):
+        res = {
+                'status':True,
+                'message':'login successfull',
+                'token':user.token
+              }
+    else:
+        res = {
+                'status':False,
+                'message':'Invalid Credentials',
+                }
+        return Response(res)
+    if no_login_token != 'null':
+        no_user = noLoginUser.objects.get(token = no_login_token)
+        no_login_id = no_user.id
+        no_login_cart = user_cart.objects.filter(no_login_id = no_login_id).values()
+        for i in no_login_cart:
+            user_cart_row = user_cart.objects.filter(product_id = i['product_id'],size = i['size']).values()
+            if len(user_cart_row) > 0 :
+                quantity = int(i['quantity']) + int(user_cart_row.last()['quantity'])
+                user_cart_row.update(quantity = quantity)
+                user_cart.objects.filter(id = i['id']).delete()
+            else:
+                no_login_cart.filter(product_id = i['product_id'],size = i['size']).update(user_id = user.id)
+        noLoginUser.objects.filter(id = no_login_id).delete()
+    return Response(res)
+
+@api_view(['POST'])
+def signUp(request,format=None):
+    if request.method == 'POST':
+        gender = request.data['gender']
+        first_name = request.data['first_name']
+        last_name = request.data['last_name']
+        email = request.data['email']
+        dob = request.data['dob']
+        phone_code = request.data['phone_code']
+        phone_no = request.data['phone_no']
+        password = request.data['password']
+
+        enc_pass = make_password(password)
+        token = make_password(email+password)
+
+        if email in user_data.objects.values_list('email',flat=True):
+            return Response({'message':'Email already exist',
+                            'status':False    
+                            })
+        if phone_no in user_data.objects.values_list('email',flat=True):
+            return Response({'message':'Phone number already exist',
+                            'status':False 
+                            })
+        data = user_data(
+                            first_name = first_name,
+                            last_name = last_name,
+                            email = email,
+                            gender = gender,
+                            dob = dob,
+                            phone_code = phone_code,
+                            phone_no = phone_no,
+                            password = enc_pass,
+                            token = token,
+                        )
+        data.save()
+        
+        res = { 
+                'message':'User created successfully',
+                'status':True    
+        }   
+
+        return Response(res)
+
+@api_view(['POST'])
+def checkout(request):
+    data = request.data
+    token = data['token']
+    res = {}
+    try:
+        user = user_data.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+              }
+        return Response(res)
+    personal_info = {}
+    personal_info['first_name'] = user.first_name
+    personal_info['last_name'] = user.last_name
+    personal_info['email'] = user.email
+    personal_info['phone_code'] = user.phone_code
+    personal_info['phone_number'] = user.phone_no
+    res['personal_info'] = personal_info
+    address_info = {}
+    user_add_obj = user_address.objects.filter(user_id = user.id).values()
+    if len(user_add_obj) > 0:
+        user_add_obj = user_add_obj.last()
+        address_info['address_line_1'] = user_add_obj['add_line_1']
+        address_info['address_line_2'] = user_add_obj['add_line_2']
+        address_info['city'] = user_add_obj['city']
+        address_info['state'] = user_add_obj['state']
+        address_info['pincode'] = user_add_obj['country']
+        address_info['country'] = user_add_obj['pincode']
+    else:
+        address_info['address_line_1'] = ""
+        address_info['address_line_2'] = ""
+        address_info['city'] = ""
+        address_info['state'] = ""
+        address_info['pincode'] = ""
+        address_info['country'] = ""
+    res['address_info'] = address_info
+    cartItems = user_cart.objects.filter(user_id = user.id).values()
+    def getProductName(x):
+        return Product_data.objects.filter(id=x).values_list('title',flat=True)[0]
+    def priceCalculate(up,q):
+        return int(up)*int(q)
+    def getProductImage(x):
+        return Product_data.objects.filter(id = x).values_list('image',flat=True)[0].split(',')[0]
+    def getProductPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['product_id']).values('size','price').last()
+        size = prod_obj['size'].split('|')        
+        price = prod_obj['price'].split('|')        
+        for i in range(len(size)):
+            if size[i] == row['size']:
+                return price[i]
+    if len(cartItems) > 0:
+        cartItems = pd.DataFrame(cartItems)
+
+        cartItems['id'] = cartItems['id']
+        cartItems['title'] = cartItems['product_id'].apply(getProductName)
+        cartItems['unit_price'] = cartItems.apply(getProductPrice,axis=1)
+        cartItems['price'] = cartItems.apply(lambda x: priceCalculate(x.unit_price, x.quantity), axis=1)
+        cartItems['quantity'] = cartItems['quantity']
+        cartItems['size'] = cartItems['size']
+        cartItems['image'] = cartItems['product_id'].apply(getProductImage)
+        cartItems = cartItems[['id','title','price','quantity','image']].to_dict(orient='records')
+        res['items'] = cartItems
+    else:
+        res['items'] = []
     cartItems = pd.DataFrame(cartItems)
-    cart_total['subtotal'] = sum(list(cartItems['price']))
-    cart_total['shipping'] = 90
-    cart_total['tax'] = 70
-    cart_total['final_price'] = cart_total['subtotal'] + cart_total['shipping'] + cart_total['tax']
-    res['cart_total'] = cart_total
+    res['item_total'] = sum(list(cartItems['price']))
+    res['delivery_charges'] = 90
+    res['tax'] = 70
+    res['order_total'] = res['item_total'] + res['delivery_charges'] + res['tax']
     return Response(res)
