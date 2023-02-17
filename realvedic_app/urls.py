@@ -1,5 +1,6 @@
 from django.urls import path
 import realvedic_app.views as views 
+import realvedic_app.test_code as t_views
 
 from django.conf.urls.static import static
 from django.conf import settings
@@ -22,5 +23,9 @@ urlpatterns = [
                 path('login',views.login,name='login'),
                 path('signUp',views.signUp,name='signUp'),
                 path('checkout',views.checkout,name='checkout'),
+                
+                path('categoryPage2',t_views.categoryPage2,name='categoryPage2'),
+                path('write_data2',t_views.landing_page2,name='landing_page2'),
+                path('single_product_view2',t_views.single_product_view2,name='single_product_view2'),
               
               ]+static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)
