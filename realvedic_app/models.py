@@ -106,29 +106,27 @@ class user_data(models.Model):
 
 class user_address(models.Model):
     user_id = models.TextField()
-    add_line_1 = models.TextField()
+    add_line_1 = models.TextField(blank=True)
     add_line_2 = models.TextField(null=True,blank=True)
     landmark = models.TextField(null=True,blank=True)
-    city = models.TextField()
-    state = models.TextField()
-    country = models.TextField()
-    pincode = models.TextField()
-    phone_no = models.TextField()
+    city = models.TextField(blank=True)
+    state = models.TextField(blank=True)
+    country = models.TextField(blank=True)
+    pincode = models.TextField(blank=True)
+    phone_no = models.TextField(blank=True)
 
 class noLoginUser(models.Model):
     token = models.TextField(blank=True)
 
 
 class PaymentOrder(models.Model):
-    order_product = models.CharField(max_length=100)
-    order_amount = models.CharField(max_length=25)
-    order_payment_id = models.CharField(max_length=100)
+    order_product = models.TextField()
+    order_amount = models.TextField()
+    order_payment_id = models.TextField()
     isPaid = models.BooleanField(default=False)
     order_date = models.DateTimeField(auto_now=True)
-    token=models.TextField(null=True)
-
-    def __str__(self):
-        return self.order_product
+    user_id=models.TextField(null=True)
+    order_status = models.TextField(blank = True) #placed > processed > dispatched > on the way > delivered
 
 
 class doctor_info(models.Model):

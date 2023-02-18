@@ -271,3 +271,71 @@ def single_product_view2(request):
                                                 }
                                              ).to_dict(orient="records")
     return Response(res)
+
+
+
+@api_view(['POST'])
+def recently_viewed_oc(request):
+    data = request.data
+    res={}
+    no_login_status = False#,
+    try:
+        token = data['token']
+        user = user_data.objects.get(token = token)
+        cart_product_ids = user_cart.objects.filter(user_id = user.id).values_list('product_id',flat=True)
+        cart_status_user_id = str(user.id)#,
+    except:
+        no_login_status = False#,
+        no_login_token = data['no_login_token']
+        no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
+        if len(no_login_id) > 0:
+            cart_product_ids = user_cart.objects.filter(no_login_id = str(no_login_id[0])).values_list('product_id',flat=True)
+            cart_status_user_id = str(no_login_id[0])#,
+
+        else:           
+            cart_status_user_id = 'u'#,
+            cart_product_ids = []
+
+    products = Product_data.objects.order_by('?').values('id','title','image','size','price')[:5]
+    
+    def getSingleImage(x):
+        return x.split(',')[0]
+    def splitByPipe(x):
+        return x.split('|')
+    def cartStatusCheck(x):
+        if str(x) in cart_product_ids:
+            return True
+        else:
+            return False
+    def getCartStatusArray(row):#,
+        p_id = row['id']
+        sizes = row['size'].split('|')
+        user_id = row['user_id'].split('_')
+        cart_status_array = []
+        if user_id[0] == 'u':
+            for size in sizes:
+                if len(user_cart.objects.filter(user_id = user_id[1],product_id = p_id,size = size).values()):
+                    cart_status_array.append(True)
+                else:
+                    cart_status_array.append(False)
+        else:
+            for size in sizes:
+                if len(user_cart.objects.filter(no_login_id = user_id[1],product_id = p_id,size = size).values()):
+                    cart_status_array.append(True)
+                else:
+                    cart_status_array.append(False)
+        return cart_status_array
+    
+    products = pd.DataFrame(products)
+    if no_login_status:#,
+        df_user_id = 'n_'+cart_status_user_id
+    else:
+        df_user_id = 'u_'+cart_status_user_id
+    products['user_id'] = df_user_id#,
+    products['image'] = products['image'].apply(getSingleImage)
+    products['weight'] = products['size'].apply(splitByPipe)
+    products['price'] = products['price'].apply(splitByPipe)
+    products['cart_status'] = products['id'].apply(cartStatusCheck)
+    products['cart_status_array'] = products.apply(getCartStatusArray,axis=1)#,
+    products = products[['id','title','image','weight','price','cart_status','cart_status_array']].to_dict(orient="records")
+    return Response(products)

@@ -24,6 +24,9 @@ from rest_framework.decorators import parser_classes,api_view
 from rest_framework.parsers import MultiPartParser,FormParser
 from rest_framework.response import Response
 
+#------------------------------razorpay---------------------------------------------
+import razorpay
+
 #----------------------------- models -----------------------------------------------
 from realvedic_app.models import user_data
 from realvedic_app.models import user_address
@@ -34,3 +37,4 @@ from realvedic_app.models import images_and_banners
 from realvedic_app.models import blogs
 from realvedic_app.models import categoryy
 from realvedic_app.models import noLoginUser
+from realvedic_app.models import PaymentOrder
