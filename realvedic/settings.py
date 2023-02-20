@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'realvedic_app',
+    'admin_realvedic_app',
     'rest_framework',
     'corsheaders',
 ]

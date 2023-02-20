@@ -31,12 +31,14 @@ class Product_data(models.Model):
     sibling_product=models.TextField(blank = True)
     HSN=models.TextField(blank = True)
     SKU=models.TextField(blank = True)
+    tax = models.TextField()
 
 class categoryy(models.Model):
     category=models.TextField()
     category_colour=models.TextField()
     category_image=models.TextField()
     category_banner=models.TextField()
+    category_banner_mobile=models.TextField()
 #-----------------------------------------------------------------------------------------------
 order_status_choices=(
     ('placed','PLACED'),

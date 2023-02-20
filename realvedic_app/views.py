@@ -12,12 +12,12 @@ def landing_page(request):
         cart_product_ids = user_cart.objects.filter(user_id = user.id).values_list('product_id',flat=True)
     except:
         no_login_token = data['no_login_token']
-        print("no_login_token",no_login_token)
+        # print("no_login_token",no_login_token)
         no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
-        print("no_login_id",no_login_id)
+        # print("no_login_id",no_login_id)
         if len(no_login_id) > 0:
             cart_product_ids = user_cart.objects.filter(no_login_id = str(no_login_id[0])).values_list('product_id',flat=True)
-            print("cart_product_ids",cart_product_ids)
+            # print("cart_product_ids",cart_product_ids)
         else:           
             cart_product_ids = []
     
@@ -105,7 +105,7 @@ def single_product_view(request):
         no_login_token = request.data['no_login_token']
         no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
         cart_product_ids = user_cart.objects.filter(no_login_id = no_login_id[0],product_id=product_id).values_list('quantity',flat=True)
-        print('cart_product_ids',cart_product_ids)
+        # print('cart_product_ids',cart_product_ids)
         if len(cart_product_ids) > 0:
             quantity = cart_product_ids[0]
             cart_status = True
@@ -155,12 +155,12 @@ def categoryPage(request):
         cart_product_ids = user_cart.objects.filter(user_id = user.id).values_list('product_id',flat=True)
     except:
         no_login_token = data['no_login_token']
-        print("no_login_token",no_login_token)
+        # print("no_login_token",no_login_token)
         no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
-        print("no_login_id",no_login_id)
+        # print("no_login_id",no_login_id)
         if len(no_login_id) > 0:
             cart_product_ids = user_cart.objects.filter(no_login_id = str(no_login_id[0])).values_list('product_id',flat=True)
-            print("cart_product_ids",cart_product_ids)
+            # print("cart_product_ids",cart_product_ids)
         else:           
             cart_product_ids = []
     res['category'] = category_obj['category']
@@ -285,7 +285,7 @@ def UserCartView(request):
     data = request.data
     token = data['token']
     no_login_token = data['no_login_token']
-    print('##################',no_login_token)
+    # print('##################',no_login_token)
     no_user_flag = False
     res = {}
     try:
@@ -303,8 +303,6 @@ def UserCartView(request):
         cartItems = user_cart.objects.filter(user_id = user_id).values('id','product_id','size','price_per_unit','quantity')
     def getProductName(x):
         return Product_data.objects.filter(id=x).values_list('title',flat=True)[0]
-    def priceCalculate(up,q):
-        return int(up)*int(q)
     def getProductImage(x):
         return Product_data.objects.filter(id = x).values_list('image',flat=True)[0].split(',')[0]
     def getProductPrice(row):
@@ -313,25 +311,52 @@ def UserCartView(request):
         price = prod_obj['price'].split('|')        
         for i in range(len(size)):
             if size[i] == row['size']:
-                return price[i]
+                return eval(price[i])
+    def getDiscountPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['product_id']).values('discount','price').last()
+        discount = prod_obj['discount']
+        return eval(str(row['unit_price'])) - ((eval(str(row['unit_price'])) * 100) // (100 + eval(discount)))
+    def calculateNetPrice(row):
+        return eval(str(row['unit_price'])) - eval(str(row['discount_price']))
+    def calculateTaxPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['product_id']).values().last()
+        tax = prod_obj['tax']
+        return eval(str(row['unit_price'])) - ((eval(str(row['unit_price'])) * 100) // (100 + eval(tax)))
+    def calculatePrice(row):
+        return eval(str(row['net_price'])) - eval(str(row['tax_price']))
+    def calculateFinalPrice(row):
+        return eval(str(row['price'])) * eval(str(row['quantity']))
+    def calculateFinalTax(row):
+        return eval(str(row['tax_price'])) * eval(str(row['quantity']))
+    def calculateFinalNetPrice(row):
+        return eval(str(row['net_price'])) * eval(str(row['quantity']))
     if len(cartItems) > 0:
         cartItems = pd.DataFrame(cartItems)
 
         cartItems['id'] = cartItems['id']
         cartItems['name'] = cartItems['product_id'].apply(getProductName)
+
         cartItems['unit_price'] = cartItems.apply(getProductPrice,axis=1)
-        cartItems['price'] = cartItems.apply(lambda x: priceCalculate(x.unit_price, x.quantity), axis=1)
+        cartItems['discount_price'] = cartItems.apply(getDiscountPrice,axis=1)
+        cartItems['net_price'] = cartItems.apply(calculateNetPrice,axis=1)
+        cartItems['tax_price'] = cartItems.apply(calculateTaxPrice,axis=1)
+        cartItems['price'] = cartItems.apply(calculatePrice,axis=1)
+
+        cartItems['final_net_price'] = cartItems.apply(calculateFinalNetPrice,axis=1)
+        cartItems['final_price'] = cartItems.apply(calculateFinalPrice,axis=1)
+        cartItems['final_tax'] = cartItems.apply(calculateFinalTax,axis=1)
+
         cartItems['quantity'] = cartItems['quantity']
         cartItems['size'] = cartItems['size']
         cartItems['image'] = cartItems['product_id'].apply(getProductImage)
-        cartItems = cartItems[['product_id','name','unit_price','price','quantity','image','size']].to_dict(orient='records')
+        cartItems = cartItems[['product_id','name','unit_price','discount_price','net_price','tax_price','price','final_net_price','final_price','final_tax','quantity','image','size']].to_dict(orient='records')
         res['cartItems'] = cartItems[::-1]
 
         cart_total = {}
         cartItems = pd.DataFrame(cartItems)
-        cart_total['subtotal'] = sum(list(cartItems['price']))
-        cart_total['shipping'] = 90
-        cart_total['tax'] = 70
+        cart_total['subtotal'] = sum(list(cartItems['final_price']))
+        cart_total['shipping'] = 0
+        cart_total['tax'] = sum(list(cartItems['final_tax']))
         cart_total['final_price'] = cart_total['subtotal'] + cart_total['shipping'] + cart_total['tax']
         res['cart_total'] = cart_total
     else:
@@ -437,9 +462,10 @@ def login(request):
     if no_login_token != 'null':
         no_user = noLoginUser.objects.get(token = no_login_token)
         no_login_id = no_user.id
+        print(no_login_id,"login view")
         no_login_cart = user_cart.objects.filter(no_login_id = no_login_id).values()
         for i in no_login_cart:
-            user_cart_row = user_cart.objects.filter(product_id = i['product_id'],size = i['size']).values()
+            user_cart_row = user_cart.objects.filter(user_id = user.id,product_id = i['product_id'],size = i['size']).values()
             if len(user_cart_row) > 0 :
                 quantity = int(i['quantity']) + int(user_cart_row.last()['quantity'])
                 user_cart_row.update(quantity = quantity)
@@ -537,8 +563,6 @@ def checkout(request):
     cartItems = user_cart.objects.filter(user_id = user.id).values()
     def getProductName(x):
         return Product_data.objects.filter(id=x).values_list('title',flat=True)[0]
-    def priceCalculate(up,q):
-        return int(up)*int(q)
     def getProductImage(x):
         return Product_data.objects.filter(id = x).values_list('image',flat=True)[0].split(',')[0]
     def getProductPrice(row):
@@ -547,25 +571,52 @@ def checkout(request):
         price = prod_obj['price'].split('|')        
         for i in range(len(size)):
             if size[i] == row['size']:
-                return price[i]
+                return eval(price[i])
+    def getDiscountPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['product_id']).values('discount','price').last()
+        discount = prod_obj['discount']
+        return eval(str(row['unit_price'])) - ((eval(str(row['unit_price'])) * 100) // (100 + eval(discount)))
+    def calculateNetPrice(row):
+        return eval(str(row['unit_price'])) - eval(str(row['discount_price']))
+    def calculateTaxPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['product_id']).values().last()
+        tax = prod_obj['tax']
+        return eval(str(row['unit_price'])) - ((eval(str(row['unit_price'])) * 100) // (100 + eval(tax)))
+    def calculatePrice(row):
+        return eval(str(row['net_price'])) - eval(str(row['tax_price']))
+    def calculateFinalPrice(row):
+        return eval(str(row['price'])) * eval(str(row['quantity']))
+    def calculateFinalTax(row):
+        return eval(str(row['tax_price'])) * eval(str(row['quantity']))
+    def calculateFinalNetPrice(row):
+        return eval(str(row['net_price'])) * eval(str(row['quantity']))
     if len(cartItems) > 0:
         cartItems = pd.DataFrame(cartItems)
 
         cartItems['id'] = cartItems['id']
-        cartItems['title'] = cartItems['product_id'].apply(getProductName)
+        cartItems['name'] = cartItems['product_id'].apply(getProductName)
+
         cartItems['unit_price'] = cartItems.apply(getProductPrice,axis=1)
-        cartItems['price'] = cartItems.apply(lambda x: priceCalculate(x.unit_price, x.quantity), axis=1)
+        cartItems['discount_price'] = cartItems.apply(getDiscountPrice,axis=1)
+        cartItems['net_price'] = cartItems.apply(calculateNetPrice,axis=1)
+        cartItems['tax_price'] = cartItems.apply(calculateTaxPrice,axis=1)
+        cartItems['price'] = cartItems.apply(calculatePrice,axis=1)
+
+        cartItems['final_net_price'] = cartItems.apply(calculateFinalNetPrice,axis=1)
+        cartItems['final_price'] = cartItems.apply(calculateFinalPrice,axis=1)
+        cartItems['final_tax'] = cartItems.apply(calculateFinalTax,axis=1)
+
         cartItems['quantity'] = cartItems['quantity']
-        cartItems['weight'] = cartItems['size']
+        cartItems['size'] = cartItems['size']
         cartItems['image'] = cartItems['product_id'].apply(getProductImage)
-        cartItems = cartItems[['id','title','weight','price','quantity','image']].to_dict(orient='records')
+        cartItems = cartItems[['product_id','name','unit_price','discount_price','net_price','tax_price','price','final_net_price','final_price','final_tax','quantity','image','size']].to_dict(orient='records')
         res['items'] = cartItems
     else:
         res['items'] = []
     cartItems = pd.DataFrame(cartItems)
-    res['item_total'] = sum(list(cartItems['price'])) 
-    res['delivery_charges'] = 90
-    res['tax'] = 70
+    res['item_total'] = sum(list(cartItems['final_price'])) 
+    res['delivery_charges'] = 0
+    res['tax'] = sum(list(cartItems['final_tax']))
     res['order_total'] = res['item_total'] + res['delivery_charges'] + res['tax']
     return Response(res)
 
@@ -793,5 +844,4 @@ def single_order_view(request):
     res['item_total'] = eval(order.order_product)['item_total']
     res['delivery_charges'] = eval(order.order_product)['delivery_charges']
     res['order_total'] = eval(order.order_product)['order_total']
-    return Response(res)
-    
+    return Response(res)  

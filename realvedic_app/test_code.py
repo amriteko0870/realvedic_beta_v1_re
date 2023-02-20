@@ -13,9 +13,11 @@ def categoryPage2(request):
         cart_product_ids = user_cart.objects.filter(user_id = user.id).values_list('product_id',flat=True)
         cart_status_user_id = str(user.id)#,
     except:
-        no_login_status = False#,
+        no_login_status = True#,
         no_login_token = data['no_login_token']
         no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
+        if len(no_login_id) == 0:
+            no_login_id = ['']
         if len(no_login_id) > 0:
             cart_product_ids = user_cart.objects.filter(no_login_id = str(no_login_id[0])).values_list('product_id',flat=True)
             cart_status_user_id = str(no_login_id[0])#,
@@ -25,6 +27,7 @@ def categoryPage2(request):
             cart_product_ids = []
     res['category'] = category_obj['category']
     res['category_banner'] = category_obj['category_banner']
+    res['category_mobile_banner'] = category_obj['category_banner_mobile']
     if category_obj['category'] == 'All Products':
         products = Product_data.objects.values('id','title','image','size','price')
     else:
@@ -85,8 +88,11 @@ def landing_page2(request):
         cart_product_ids = user_cart.objects.filter(user_id = user.id).values_list('product_id',flat=True)
         cart_status_user_id = str(user.id)#,
     except:
+        no_login_status = True#,
         no_login_token = data['no_login_token']
         no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
+        if len(no_login_id) == 0:
+            no_login_id = ['']
         if len(no_login_id) > 0:
             cart_product_ids = user_cart.objects.filter(no_login_id = str(no_login_id[0])).values_list('product_id',flat=True)
             cart_status_user_id = str(no_login_id[0])#,
@@ -102,7 +108,7 @@ def landing_page2(request):
                                     .values('id','title','image')
     res['tab'] = list(category_obj)[::-1]
     res['banner'] = images_and_banners.objects.filter(title = 'banner').values()
-    
+    res['mobile_banner'] = images_and_banners.objects.filter(title = 'mobile_banner').values()
     def singleImageGet(x):
         return x.split(',')[0]
     def splitPipe(x):
@@ -117,15 +123,16 @@ def landing_page2(request):
         sizes = row['size'].split('|')
         user_id = row['user_id'].split('_')
         cart_status_array = []
+        # print(user_id,"cartstatusarray")
         if user_id[0] == 'u':
             for size in sizes:
-                if len(user_cart.objects.filter(user_id = user_id[1],product_id = p_id,size = size).values()):
+                if len(user_cart.objects.filter(user_id = user_id[1],product_id = p_id,size = size).values()) > 0:
                     cart_status_array.append(True)
                 else:
                     cart_status_array.append(False)
         else:
             for size in sizes:
-                if len(user_cart.objects.filter(no_login_id = user_id[1],product_id = p_id,size = size).values()):
+                if len(user_cart.objects.filter(no_login_id = user_id[1],product_id = p_id,size = size).values()) > 0:
                     cart_status_array.append(True)
                 else:
                     cart_status_array.append(False)
@@ -146,6 +153,7 @@ def landing_page2(request):
     top_seller = top_seller[['id','image','title','weight','price','cart_status','cart_status_array']].to_dict(orient='records')
     top_seller = list(top_seller)[::-1][:5]
     res['top_seller_products'] = top_seller
+    # print(top_seller,"landing page")
 
     small_crousel = Product_data.objects.annotate(
                                                     product_id = F('id')
@@ -193,7 +201,7 @@ def single_product_view2(request):
     try:
         token = request.data['token']
         user = user_data.objects.get(token = token)
-        print('userrrrrrrrrrr',user.id)
+        # print('userrrrrrrrrrr',user.id)
         cart_product_ids = user_cart.objects.filter(user_id = user.id,product_id=product_id).values_list('quantity',flat=True)
         cart_status_user_id = str(user.id)#,
         if len(cart_product_ids) > 0:
@@ -203,9 +211,11 @@ def single_product_view2(request):
             quantity = 0
             cart_status = False
     except:
-        no_login_status = False#,
+        no_login_status = True#,
         no_login_token = request.data['no_login_token']
         no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
+        if len(no_login_id) == 0:
+            no_login_id = ['']
         if len(no_login_id) > 0:#,
             cart_status_user_id = str(no_login_id[0])#,
         else:#,
@@ -288,6 +298,8 @@ def recently_viewed_oc(request):
         no_login_status = False#,
         no_login_token = data['no_login_token']
         no_login_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)
+        if len(no_login_id) == 0:
+            no_login_id = ['']
         if len(no_login_id) > 0:
             cart_product_ids = user_cart.objects.filter(no_login_id = str(no_login_id[0])).values_list('product_id',flat=True)
             cart_status_user_id = str(no_login_id[0])#,
