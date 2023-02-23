@@ -27,7 +27,7 @@ class Product_data(models.Model):
     how_to_use=models.TextField(blank = True)
     how_we_make_it = models.TextField(blank = True)
     nutrition= models.TextField(blank = True)
-    Status = models.TextField(blank = True)
+    status = models.BooleanField(default=True)
     sibling_product=models.TextField(blank = True)
     HSN=models.TextField(blank = True)
     SKU=models.TextField(blank = True)
