@@ -116,13 +116,16 @@ def singleProductView(request):
     res['hsn'] = product_obj['HSN']
     res['discount'] = product_obj['discount']
     res['tax'] = product_obj['tax']
-    variant_data = pd.DataFrame({
-                                    'variant_name':product_obj['size'].split('|'),
-                                    'price':product_obj['price'].split('|'),
-                                    'sku':product_obj['SKU'].split('|')
-                                })
-    variant_data['id'] = variant_data.index
-    variant_data = variant_data.to_dict(orient='records')
+    if product_obj['size'].split('|')[0] != '':
+        variant_data = pd.DataFrame({
+                                        'variant_name':product_obj['size'].split('|'),
+                                        'price':product_obj['price'].split('|'),
+                                        'sku':product_obj['SKU'].split('|')
+                                    })
+        variant_data['id'] = variant_data.index
+        variant_data = variant_data.to_dict(orient='records')
+    else:
+        variant_data = []
     res['variant_data'] = variant_data
     sibling_product = Product_data.objects.filter(id = product_obj['sibling_product'])\
                                           .annotate(product_id = F('id'),product_name = F('title'),img = F('image'))\
@@ -354,4 +357,7 @@ def addNewProduct(request):
         res = {
                 "status":True,
                 "message":"product added successfuly" 
-                }
+              }
+        return Response(res)
+
+
