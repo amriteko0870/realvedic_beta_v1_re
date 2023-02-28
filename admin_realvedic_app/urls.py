@@ -12,7 +12,12 @@ urlpatterns = [
                 path('siblingProductList',views.siblingProductList,name='siblingProductList'),
                 path('singleProductEdit',views.singleProductEdit,name='singleProductEdit'),
                 path('storeImage',views.storeImage,name='storeImage'),
-                path('addNewProduct',views.addNewProduct,name='addNewProduct'),
+                path('addNewProduct',views.addNewProduct,name='addNewProduct'),  
+                path('adminOrderView',views.adminOrderView,name='adminOrderView'),  
+                path('singleOrderView',views.singleOrderView,name='singleOrderView'),  
+                path('singleOrderEdit',views.singleOrderEdit,name='singleOrderEdit'),  
+                path('userView',views.userView,name='userView'),  
+                path('singleUserView',views.singleUserView,name='singleUserView'),  
                 
                 
               ]+static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)

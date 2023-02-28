@@ -550,8 +550,9 @@ def checkout(request):
         address_info['address_line_2'] = user_add_obj['add_line_2']
         address_info['city'] = user_add_obj['city']
         address_info['state'] = user_add_obj['state']
-        address_info['pincode'] = user_add_obj['country']
-        address_info['country'] = user_add_obj['pincode']
+        address_info['landmark'] = user_add_obj['landmark']
+        address_info['pincode'] = user_add_obj['pincode']
+        address_info['country'] = user_add_obj['country']
     else:
         address_info['address_line_1'] = ""
         address_info['address_line_2'] = ""

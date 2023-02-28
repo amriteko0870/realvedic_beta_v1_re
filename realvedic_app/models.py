@@ -1,3 +1,5 @@
+from datetime import datetime
+import pytz
 from django.db import models
 
 # Create your models here.
@@ -104,6 +106,7 @@ class user_data(models.Model):
     phone_code = models.TextField()
     phone_no = models.TextField()
     password = models.TextField()
+    created_at = models.TextField(default=str(datetime.now(pytz.timezone("Asia/Kolkata"))))
     token = models.TextField()
 
 class user_address(models.Model):
@@ -126,7 +129,7 @@ class PaymentOrder(models.Model):
     order_amount = models.TextField()
     order_payment_id = models.TextField()
     isPaid = models.BooleanField(default=False)
-    order_date = models.DateTimeField(auto_now=True)
+    order_date = models.TextField(default=str(datetime.now(pytz.timezone("Asia/Kolkata"))))
     user_id=models.TextField(null=True)
     order_status = models.TextField(blank = True) #placed > processed > dispatched > on the way > delivered
 

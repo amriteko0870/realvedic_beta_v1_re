@@ -361,3 +361,218 @@ def addNewProduct(request):
         return Response(res)
 
 
+@api_view(['POST'])
+def adminOrderView(request):
+    data = request.data
+    try:
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    def getCustomerDetails(x):
+        u = user_data.objects.filter(id = x).values().last()
+        return { "name": u['first_name']+ " "+ u["last_name"],"email":u['email']}
+    titles = ["Order ID","Timestamp","Customer","Items","State","Grand Total","Delivery Status","Actions"]
+    res['titles'] = titles
+    content = PaymentOrder.objects.values()
+    content = pd.DataFrame(content)
+    content['invoice_id'] = content['id']
+    content['created_date'] = content['order_date'].apply(lambda x : str(x)[:10])
+    content['created_time'] = content['order_date'].apply(lambda x : str(x)[11:19])
+    content['customer'] = content['user_id'].apply(getCustomerDetails)
+    content['items'] = content['order_product'].apply(lambda x : len(eval(x)['items']))
+    content['destination_state'] = content['order_product'].apply(lambda x : eval(x)['address_info']['state'])
+    content['grand_total'] = content['order_amount']
+    content['status'] = content['order_status']
+    content = content[['invoice_id','created_date','created_time','customer','items','destination_state','grand_total','status']].to_dict(orient='records')
+    res['content'] = content
+    return Response(res)
+
+@api_view(['POST'])
+def singleOrderView(request):
+    data = request.data
+    try:
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    order_id = data['order_id']
+    order_obj = PaymentOrder.objects.filter(id = order_id).values().last()
+    res = {}
+    def getCategoryName(x):
+        cat_id = Product_data.objects.filter(id = x).values_list('category',flat=True)[0]
+        return categoryy.objects.filter(id = cat_id).values_list('category',flat=True)[0]
+    res['order_id'] = order_obj['id']
+    res['status'] = order_obj['order_status']
+    res['order_date'] = order_obj['order_date'][:10]
+    res['order_time'] = order_obj['order_date'][11:19]
+    items = eval(order_obj['order_product'])['items']
+    items = pd.DataFrame(items)
+    items['id'] = items['product_id']
+    items['image'] = items['image']
+    items['title'] = items['name']
+    items['unit_price'] = items['unit_price']
+    items['size'] = items['size']
+    items['quantity'] = items['quantity']
+    items['quantity_price'] = items['final_net_price']
+    items['category'] = items['product_id'].apply(getCategoryName)
+    items = items[['id','image','title','unit_price','size','quantity','quantity_price','category']].to_dict(orient='records')
+    res['items'] = items
+    payment_info = {}
+    payment_info["sub_total"] = eval(order_obj['order_product'])['item_total']
+    payment_info["shipping"] = eval(order_obj['order_product'])['delivery_charges']
+    payment_info["tax"] = eval(order_obj['order_product'])['tax']
+    payment_info["grand_total"] = eval(order_obj['order_product'])['item_total']
+    res['payment_info'] = payment_info
+    shipping_info = {}
+    shipping_info["address_line_1"] = eval(order_obj['order_product'])['address_info']['address_line_1']
+    shipping_info["address_line_2"] = eval(order_obj['order_product'])['address_info']['address_line_2']
+    shipping_info["landmark"] = eval(order_obj['order_product'])['address_info']['landmark']
+    shipping_info["city"] = eval(order_obj['order_product'])['address_info']['city']
+    shipping_info["state"] = eval(order_obj['order_product'])['address_info']['state']
+    shipping_info["country"] = eval(order_obj['order_product'])['address_info']['country']
+    res['shipping_info'] = shipping_info
+    res['billing_info'] = shipping_info
+    contact_info = {}
+    user_obj = user_data.objects.filter(id = order_obj['user_id']).values().last()
+    contact_info["first_name"] = user_obj['first_name']
+    contact_info["last_name"] = user_obj['last_name']
+    contact_info["email"] = user_obj['email']
+    contact_info["phone_number"] = "+"+user_obj['phone_code']+" "+user_obj['phone_no']
+    res['contact_info'] = contact_info
+    status_list =  [
+                        { "status_name": 'placed', "status_color": '#f3a638' },
+                        { "status_name": 'processed', "status_color": '#54b7d3' },
+                        { "status_name": 'dispatched', "status_color": '#1e91cf' },
+                        { "status_name": 'on the way', "status_color": '#7955bf' },
+                        { "status_name": 'delivered', "status_color": '#00ac69' },
+                        { "status_name": 'canceled', "status_color": '#FF0000' },
+                        { "status_name": 'returned', "status_color": '#e99f15' },
+                   ]
+    res['status_list'] = status_list
+    return Response(res)
+
+@api_view(['POST'])
+def singleOrderEdit(request):
+    data = request.data
+    try:
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    order_id = data['order_id']
+    order_status = data['order_status']
+    try:
+        PaymentOrder.objects.get(id = order_id)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    order_obj = PaymentOrder.objects.filter(id = order_id).update(order_status = order_status)
+    res = {
+                'status':True,
+                'message':'Order updated successfully'
+            }
+    return Response(res)
+
+@api_view(['POST'])
+def userView(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    def createUserObj(x):
+        return {"name":x['first_name'] + " " + x["last_name"],'email':x['email']}
+    titles =  ["User ID","Created","Customer","Phone No","Actions"]
+    res['titles'] = titles
+    content = user_data.objects.values()
+    content = pd.DataFrame(content)
+    content['user_id'] = content['id']
+    content['created_date'] = content['created_at'].apply(lambda x : str(x)[:10])
+    content['created_time'] = content['created_at'].apply(lambda x : str(x)[11:19])
+    content['user'] = content.apply(createUserObj,axis = 1)
+    content['phone_no'] = content.apply(lambda x : "+"+x['phone_code']+" "+x["phone_no"],axis=1)
+    content = content[['user_id','created_date','created_time','user','phone_no']].to_dict(orient='records')
+    res['content'] = content
+    return Response(res)
+
+@api_view(['POST'])
+def singleUserView(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    def setOrderItems(x):
+        x = eval(x)['items']
+        items = pd.DataFrame(x)
+        items["image"] = items['image']
+        items["title"] = items['name']
+        items["quantity"] = items['quantity']
+        items["weight"] = items['size']
+        items["price"] = items['final_net_price']
+        items = items[['image','title','quantity','weight','price']].to_dict(orient='records')
+        return items
+    user_id = data['user_id']
+    user_obj = user_data.objects.filter(id = user_id).values().last()
+    user_add_obj = user_address.objects.filter(user_id = user_id).values().last()
+    order_obj = PaymentOrder.objects.filter(user_id = user_id)
+    res["first_name"] = user_obj['first_name']
+    res["last_name"] = user_obj['last_name']
+    res["email"] = user_obj['email']
+    res["phone_number"] = "+" + user_obj['phone_code'] + " " + user_obj['phone_no']
+    if len(order_obj.values()) > 0:
+        res["total_amount_spent"] = sum([int(i) for i in order_obj.values_list('order_amount',flat=True)])
+        res["total_orders"] = order_obj.count() 
+        orders = pd.DataFrame(order_obj.values())
+        orders['order_id'] = orders['id']
+        orders['status'] = orders['order_status']
+        orders['order_total'] = orders['order_amount']
+        orders['order_time'] = orders['order_date'].apply(lambda x : str(x)[11:19])
+        orders['order_date'] = orders['order_date'].apply(lambda x : str(x)[:10])
+        orders['items'] = orders['order_product'].apply(setOrderItems)
+        orders =  orders[['order_id','status','order_total','order_time','order_date','items']].to_dict(orient='records')
+        res['orders'] = orders
+    else:
+        res["total_amount_spent"] = "0"
+        res["total_orders"] = "0"
+        res['orders'] = []
+    shipping_info = {}
+    if len(user_add_obj) > 0:
+        shipping_info["address_line_1"] = user_add_obj['add_line_1'] 
+        shipping_info["address_line_2"] = user_add_obj['add_line_2']
+        shipping_info["landmark"] = user_add_obj['landmark']
+        shipping_info["city"] = user_add_obj['city']
+        shipping_info["state"] = user_add_obj['state']
+        shipping_info["country"] = user_add_obj['country']
+        shipping_info["pincode"] = user_add_obj['pincode']
+    res['shipping_info'] = shipping_info
+    return Response(res)
