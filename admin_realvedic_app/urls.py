@@ -18,6 +18,14 @@ urlpatterns = [
                 path('singleOrderEdit',views.singleOrderEdit,name='singleOrderEdit'),  
                 path('userView',views.userView,name='userView'),  
                 path('singleUserView',views.singleUserView,name='singleUserView'),  
-                
-                
+                path('userBlock',views.userBlock,name='userBlock'),  
+                path('addUser',views.addUser,name='addUser'),  
+                path('getProductList',views.getProductList,name='getProductList'),  
+                path('updateAddedProducts',views.updateAddedProducts,name='updateAddedProducts'),  
+                path('updateAddedProductsQuantity',views.updateAddedProductsQuantity,name='updateAddedProductsQuantity'),  
+                path('updateAddedProductsDelete',views.updateAddedProductsDelete,name='updateAddedProductsDelete'),  
+                path('orderUserDetails',views.orderUserDetails,name='orderUserDetails'),  
+                path('adminStartPayment',views.adminStartPayment,name='adminStartPayment'),  
+                path('adminHandlePaymentSuccess',views.adminHandlePaymentSuccess,name='adminHandlePaymentSuccess'),  
+                path('adminOrderMarkAsPaid',views.adminOrderMarkAsPaid,name='adminOrderMarkAsPaid'),  
               ]+static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)

@@ -73,7 +73,6 @@ class Order_data(models.Model):
     status=models.CharField(max_length=50,choices = order_status_choices,default='Placed')
 
 
-
 class images_and_banners(models.Model):
     title=models.TextField()
     image=models.TextField()
@@ -105,9 +104,13 @@ class user_data(models.Model):
     dob = models.TextField()
     phone_code = models.TextField()
     phone_no = models.TextField()
-    password = models.TextField()
+    password = models.TextField(blank=True)
     created_at = models.TextField(default=str(datetime.now(pytz.timezone("Asia/Kolkata"))))
-    token = models.TextField()
+    token = models.TextField(blank=True)
+    status = models.BooleanField(default=True)
+    admin_create_status = models.BooleanField(default=False)
+
+
 
 class user_address(models.Model):
     user_id = models.TextField()
@@ -132,6 +135,7 @@ class PaymentOrder(models.Model):
     order_date = models.TextField(default=str(datetime.now(pytz.timezone("Asia/Kolkata"))))
     user_id=models.TextField(null=True)
     order_status = models.TextField(blank = True) #placed > processed > dispatched > on the way > delivered
+    admin_placed_status = models.BooleanField(default=False)
 
 
 class doctor_info(models.Model):

@@ -1,47 +1,199 @@
 {
-  "address_info": {
-    "address_line_1": "76 realvedic2",
-    "address_line_2": "kormangala 4th block",
-    "city": "kathmandu",
-    "state": "kathmandu",
-    "landmark": "BDA complex",
-    "pincode": "560029",
-    "country": "Nepal"
-  },
-  "items": [
+  "added_products": [
     {
-      "product_id": "10",
-      "name": "Immumilk",
-      "unit_price": 90,
-      "discount_price": 12,
-      "net_price": 78,
-      "tax_price": 14,
-      "price": 64,
-      "final_net_price": 78,
-      "final_price": 64,
-      "final_tax": 14,
+      "id": 1,
+      "title": "Multigrain Health Mix",
+      "category": "Health Mix",
+      "image": "media/multigrainhealthmix1.png",
+      "size": "500 g",
+      "unit_price": 175,
+      "net_price": 149,
       "quantity": "1",
-      "image": "media/immumilk1.png",
-      "size": "50 g"
-    },
-    {
-      "product_id": "9",
-      "name": "Desi Chai Masala",
-      "unit_price": 115,
-      "discount_price": 15,
-      "net_price": 100,
-      "tax_price": 6,
-      "price": 94,
-      "final_net_price": 100,
-      "final_price": 94,
-      "final_tax": 6,
-      "quantity": "1",
-      "image": "media/desichaimasala1.png",
-      "size": "50 g"
+      "price": 149
     }
   ],
-  "item_total": 158,
-  "delivery_charges": 0,
-  "tax": 20,
-  "order_total": 178
+  "all_products": [
+    {
+      "id": 1,
+      "title": "Multigrain Health Mix",
+      "category": "Health Mix",
+      "image": "media/multigrainhealthmix1.png",
+      "size": ["200 g", "250 g", "500 g", "1 kg"],
+      "unit_price": ["110", "125", "175", "265"],
+      "net_price": [94, 106, 149, 225]
+    },
+    {
+      "id": 2,
+      "title": "Multigrain Dosa Mix",
+      "category": "Dosa Mix",
+      "image": "media/multigraindosa1.png",
+      "size": ["200 g", "250 g", "500 g", "1 kg"],
+      "unit_price": ["105", "125", "165", "235"],
+      "net_price": [89, 106, 140, 200]
+    },
+    {
+      "id": 3,
+      "title": "Green Gram Dosa Mix",
+      "category": "Dosa Mix",
+      "image": "media/greengramdosa1.png",
+      "size": ["250 g", "500 g", "1 kg"],
+      "unit_price": ["151", "272", "502"],
+      "net_price": [128, 231, 427]
+    },
+    {
+      "id": 4,
+      "title": "Cumin Pepper Rasam Powder",
+      "category": "Rasam & Soup",
+      "image": "media/cuminpepperrasam1.png",
+      "size": ["100 g"],
+      "unit_price": ["115"],
+      "net_price": [98]
+    },
+    {
+      "id": 5,
+      "title": "Garlic Rasam Powder",
+      "category": "Rasam & Soup",
+      "image": "media/garlicrasamfront1.png",
+      "size": ["100 g"],
+      "unit_price": ["110"],
+      "net_price": [94]
+    },
+    {
+      "id": 6,
+      "title": "Lemon Grass Rasam Powder",
+      "category": "Rasam & Soup",
+      "image": "media/lemongrass1.png",
+      "size": ["100 g"],
+      "unit_price": ["110"],
+      "net_price": [94]
+    },
+    {
+      "id": 7,
+      "title": "Neem Flower Rasam powder",
+      "category": "Rasam & Soup",
+      "image": "media/neemflowerrasam1.png",
+      "size": ["100 g"],
+      "unit_price": ["110"],
+      "net_price": [94]
+    },
+    {
+      "id": 8,
+      "title": "Kokum Rasam Powder",
+      "category": "Rasam & Soup",
+      "image": "media/kokumrasam1.png",
+      "size": ["100 g"],
+      "unit_price": ["110"],
+      "net_price": [94]
+    },
+    {
+      "id": 9,
+      "title": "Desi Chai Masala",
+      "category": "Beverage Mixes",
+      "image": "media/desichaimasala1.png",
+      "size": ["50 g"],
+      "unit_price": ["115"],
+      "net_price": [98]
+    },
+    {
+      "id": 10,
+      "title": "Immumilk",
+      "category": "Beverage Mixes",
+      "image": "media/immumilk1.png",
+      "size": ["50 g", "100 g"],
+      "unit_price": ["90", "140"],
+      "net_price": [76, 119]
+    },
+    {
+      "id": 11,
+      "title": "Vegetable Masala Mix",
+      "category": "Spice Blends",
+      "image": "media/vegetablemasalamix1.png",
+      "size": ["100 g"],
+      "unit_price": ["110"],
+      "net_price": [94]
+    },
+    {
+      "id": 12,
+      "title": "Angaya Podi",
+      "category": "Spice Blends",
+      "image": "media/angayapodi1.png",
+      "size": ["100 g"],
+      "unit_price": ["125"],
+      "net_price": [106]
+    },
+    {
+      "id": 13,
+      "title": "Multigrain Atta",
+      "category": "Flour Packs",
+      "image": "media/multigrainatta1.png",
+      "size": ["500 g", "1 kg", "5 kg"],
+      "unit_price": ["85", "150", "750"],
+      "net_price": [72, 128, 638]
+    },
+    {
+      "id": 14,
+      "title": "Finger Millet Noodles",
+      "category": "Noodle & Pasta",
+      "image": "media/fingermillet1.png",
+      "size": ["200 g"],
+      "unit_price": ["100"],
+      "net_price": [85]
+    },
+    {
+      "id": 15,
+      "title": "Multi Millet Noodles",
+      "category": "Noodle & Pasta",
+      "image": "media/multimillet1.png",
+      "size": ["200 g"],
+      "unit_price": ["100"],
+      "net_price": [85]
+    },
+    {
+      "id": 16,
+      "title": "Diabetic Atta",
+      "category": "Flour Packs",
+      "image": "media/diabeticatta1.png",
+      "size": ["500 g", "1 kg", "5 kg"],
+      "unit_price": ["100", "180", "900"],
+      "net_price": [85, 153, 765]
+    }
+  ],
+  "payment_details": { "sub_total": 149, "shipping": 0, "total": 149 },
+  "user_list": [
+    {
+      "first_name": "Ranganathan2",
+      "last_name": "Srinivasana2",
+      "email": "ranga@eko.com",
+      "id": 8
+    },
+    {
+      "first_name": "Vuvek",
+      "last_name": "Khunal",
+      "email": "vuvek@khunal.com",
+      "id": 9
+    },
+    {
+      "first_name": "Arvind",
+      "last_name": "Sir",
+      "email": "arvind@sir.com",
+      "id": 10
+    }
+  ],
+  "shipping_info": {
+    "address_line_1": "76 realvedic2",
+    "address_line_2": "kormangala 4th block",
+    "landmark": "BDA complex",
+    "city": "kathmandu",
+    "state": "kathmandu",
+    "country": "Nepal",
+    "pincode": "560029"
+  },
+  "customer_details": {
+    "id": 8,
+    "first_name": "Ranganathan2",
+    "last_name": "Srinivasana2",
+    "email": "ranga@eko.com",
+    "phone_number": "+91 8857445478"
+  },
+  "token": "pbkdf2_sha256$320000$5k1H9IvGYnXiqVV5LeOR4a$s58kQ8bX5MADJpcFoYz/JYlX05c0RkqoEIlIQ+jPVlA="
 }

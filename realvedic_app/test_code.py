@@ -29,9 +29,9 @@ def categoryPage2(request):
     res['category_banner'] = category_obj['category_banner']
     res['category_mobile_banner'] = category_obj['category_banner_mobile']
     if category_obj['category'] == 'All Products':
-        products = Product_data.objects.values('id','title','image','size','price')
+        products = Product_data.objects.values('id','title','image','size','price','discount')
     else:
-        products = Product_data.objects.filter(category = category_id).values('id','title','image','size','price')
+        products = Product_data.objects.filter(category = category_id).values('id','title','image','size','price','discount')
     
     def getSingleImage(x):
         return x.split(',')[0]
@@ -60,6 +60,14 @@ def categoryPage2(request):
                 else:
                     cart_status_array.append(False)
         return cart_status_array
+
+    def getNetPriceArray(x):
+        net_price = []
+        dis = x['discount']
+        # print(x['unit_price'])
+        for i in x['unit_price']:
+            net_price.append(str(round(int(i) - (int(i) * int(dis)/100))))
+        return net_price
     
     products = pd.DataFrame(products)
     if no_login_status:#,
@@ -69,10 +77,11 @@ def categoryPage2(request):
     products['user_id'] = df_user_id#,
     products['image'] = products['image'].apply(getSingleImage)
     products['weight'] = products['size'].apply(splitByPipe)
-    products['price'] = products['price'].apply(splitByPipe)
+    products['unit_price'] = products['price'].apply(splitByPipe)
+    products['net_price'] = products.apply(getNetPriceArray,axis=1)
     products['cart_status'] = products['id'].apply(cartStatusCheck)
     products['cart_status_array'] = products.apply(getCartStatusArray,axis=1)#,
-    products = products[['id','title','image','weight','price','cart_status','cart_status_array']].to_dict(orient="records")
+    products = products[['id','title','image','weight','unit_price','net_price','cart_status','cart_status_array']].to_dict(orient="records")
     res['products'] = products
     return Response(res)
 
@@ -137,8 +146,15 @@ def landing_page2(request):
                 else:
                     cart_status_array.append(False)
         return cart_status_array
+    def getNetPriceArray(x):
+        net_price = []
+        dis = x['discount']
+        # print(x['unit_price'])
+        for i in x['unit_price']:
+            net_price.append(str(round(int(i) - (int(i) * int(dis)/100))))
+        return net_price
 
-    top_seller = Product_data.objects.values('id','image','title','size','price')
+    top_seller = Product_data.objects.values('id','image','title','size','price','discount')
     top_seller = pd.DataFrame(top_seller)
     if no_login_status:#,
         df_user_id = 'n_'+cart_status_user_id
@@ -147,10 +163,11 @@ def landing_page2(request):
     top_seller['user_id'] = df_user_id#,
     top_seller['image'] = top_seller['image'].apply(singleImageGet)
     top_seller['weight'] = top_seller['size'].apply(splitPipe)
-    top_seller['price'] = top_seller['price'].apply(splitPipe)
+    top_seller['unit_price'] = top_seller['price'].apply(splitPipe)
+    top_seller['net_price'] = top_seller.apply(getNetPriceArray,axis=1)
     top_seller['cart_status'] = top_seller['id'].apply(cartStatusCheck)
     top_seller['cart_status_array'] = top_seller.apply(getCartStatusArray,axis=1)#,
-    top_seller = top_seller[['id','image','title','weight','price','cart_status','cart_status_array']].to_dict(orient='records')
+    top_seller = top_seller[['id','image','title','weight','unit_price','net_price','cart_status','cart_status_array']].to_dict(orient='records')
     top_seller = list(top_seller)[::-1][:5]
     res['top_seller_products'] = top_seller
     # print(top_seller,"landing page")
@@ -308,7 +325,7 @@ def recently_viewed_oc(request):
             cart_status_user_id = 'u'#,
             cart_product_ids = []
 
-    products = Product_data.objects.order_by('?').values('id','title','image','size','price')[:5]
+    products = Product_data.objects.order_by('?').values('id','title','image','size','price','discount')[:5]
     
     def getSingleImage(x):
         return x.split(',')[0]
@@ -337,6 +354,13 @@ def recently_viewed_oc(request):
                 else:
                     cart_status_array.append(False)
         return cart_status_array
+    def getNetPriceArray(x):
+        net_price = []
+        dis = x['discount']
+        # print(x['unit_price'])
+        for i in x['unit_price']:
+            net_price.append(str(round(int(i) - (int(i) * int(dis)/100))))
+        return net_price
     
     products = pd.DataFrame(products)
     if no_login_status:#,
@@ -346,8 +370,9 @@ def recently_viewed_oc(request):
     products['user_id'] = df_user_id#,
     products['image'] = products['image'].apply(getSingleImage)
     products['weight'] = products['size'].apply(splitByPipe)
-    products['price'] = products['price'].apply(splitByPipe)
+    products['unit_price'] = products['price'].apply(splitByPipe)
+    products['net_price'] = products.apply(getNetPriceArray,axis=1)
     products['cart_status'] = products['id'].apply(cartStatusCheck)
     products['cart_status_array'] = products.apply(getCartStatusArray,axis=1)#,
-    products = products[['id','title','image','weight','price','cart_status','cart_status_array']].to_dict(orient="records")
+    products = products[['id','title','image','weight','unit_price','net_price','cart_status','cart_status_array']].to_dict(orient="records")
     return Response(products)

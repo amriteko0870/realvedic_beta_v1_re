@@ -389,7 +389,9 @@ def adminOrderView(request):
     content['destination_state'] = content['order_product'].apply(lambda x : eval(x)['address_info']['state'])
     content['grand_total'] = content['order_amount']
     content['status'] = content['order_status']
-    content = content[['invoice_id','created_date','created_time','customer','items','destination_state','grand_total','status']].to_dict(orient='records')
+    content['is_paid'] = content['isPaid']
+    content['admin_placed'] = content['admin_placed_status']
+    content = content[['invoice_id','created_date','created_time','customer','items','destination_state','grand_total','status','is_paid','admin_placed']].to_dict(orient='records')
     res['content'] = content
     return Response(res)
 
@@ -423,15 +425,14 @@ def singleOrderView(request):
     items['unit_price'] = items['unit_price']
     items['size'] = items['size']
     items['quantity'] = items['quantity']
-    items['quantity_price'] = items['final_net_price']
+    items['quantity_price'] = items['price']
     items['category'] = items['product_id'].apply(getCategoryName)
     items = items[['id','image','title','unit_price','size','quantity','quantity_price','category']].to_dict(orient='records')
     res['items'] = items
     payment_info = {}
     payment_info["sub_total"] = eval(order_obj['order_product'])['item_total']
     payment_info["shipping"] = eval(order_obj['order_product'])['delivery_charges']
-    payment_info["tax"] = eval(order_obj['order_product'])['tax']
-    payment_info["grand_total"] = eval(order_obj['order_product'])['item_total']
+    payment_info["grand_total"] = eval(order_obj['order_product'])['order_total']
     res['payment_info'] = payment_info
     shipping_info = {}
     shipping_info["address_line_1"] = eval(order_obj['order_product'])['address_info']['address_line_1']
@@ -491,6 +492,221 @@ def singleOrderEdit(request):
     return Response(res)
 
 @api_view(['POST'])
+def getProductList(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    def getAfterDicountPriceArray(x):
+        dis = x['discount']
+        net_price = []
+        if x['price'].split('|')[0] != '':
+            for i in x['price'].split('|'):
+                net_price.append(round(int(i) - (int(i)*int(dis)/100)))
+        return net_price
+    res['added_products'] = []
+    all_products = Product_data.objects.values()
+    all_products = pd.DataFrame(all_products)
+    all_products['id'] = all_products['id']
+    all_products['title'] = all_products['title']
+    all_products['category'] = all_products['category'].apply( lambda x : categoryy.objects.filter(id = x).values_list('category',flat=True)[0])
+    all_products['image'] = all_products['image'].apply(lambda x : x.split(',')[0])
+    all_products['size'] = all_products['size'].apply(lambda x : x.split('|'))
+    all_products['unit_price'] = all_products['price'].apply(lambda x : x.split('|'))
+    all_products['net_price'] = all_products.apply(getAfterDicountPriceArray,axis=1)
+    all_products = all_products[['id','title','category','image','size','unit_price','net_price']]
+    all_products = all_products.to_dict(orient='records')
+    res['all_products'] = all_products
+    payment_details =  {
+                            'sub_total': '',
+                            'shipping': '',
+                            'tax': '',
+                            'total': '',
+                        }
+    res['payment_details'] = payment_details
+    user_list = user_data.objects.values('first_name','last_name','email','id')
+    res['user_list'] = user_list
+    shipping_info = {}
+    shipping_info["address_line_1"] = ''
+    shipping_info["address_line_2"] = ''
+    shipping_info["landmark"] = ''
+    shipping_info["city"] = ''
+    shipping_info["state"] = ''
+    shipping_info["country"] = ''
+    res['shipping_info'] = shipping_info
+    customer_details = {}
+    customer_details["id"] = ''
+    customer_details["first_name"] = ''
+    customer_details["last_name"] = ''
+    customer_details["email"] = ''
+    customer_details["phone_number"] = ''
+    res['customer_details'] = customer_details
+    return Response(res)
+
+@api_view(['POST'])
+def orderUserDetails(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+        user_data.objects.get(id = data['user_id'])
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    user_obj = user_data.objects.filter(id = data['user_id']).values().last()
+    res = {}
+    customer_details = {}
+    customer_details["id"] = user_obj['id']
+    customer_details["first_name"] = user_obj['first_name']
+    customer_details["last_name"] = user_obj['last_name']
+    customer_details["email"] = user_obj['email']
+    customer_details["phone_number"] = "+"+user_obj['phone_code']+" "+user_obj['phone_no']
+    res['customer_details'] = customer_details
+    user_add = user_address.objects.filter(user_id = data['user_id']).values().last()
+    shipping_info = {}
+    shipping_info["address_line_1"] = user_add['add_line_1']
+    shipping_info["address_line_2"] = user_add['add_line_2']
+    shipping_info["landmark"] = user_add['landmark']
+    shipping_info["city"] = user_add['city']
+    shipping_info["state"] = user_add['state']
+    shipping_info["country"] = user_add['country']
+    shipping_info['pincode'] = user_add['pincode']
+    res['shipping_info'] = shipping_info
+    return Response(res)
+@api_view(['POST'])
+def updateAddedProducts(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    flag = False
+    added_products = eval(data['added_products'])
+    for i in added_products:
+        if data['prod_id'] == str(i['id']) and data['size'] == i['size']:
+            i['quantity'] = int(i['quantity']) + 1
+            i['price'] = i['net_price'] * int(i['quantity'])
+            flag = True
+    if not flag:
+        prod_obj = Product_data.objects.filter(id = data['prod_id']).values().last()
+        single_prod_obj = {}
+        single_prod_obj['product_id'] = prod_obj['id']
+        single_prod_obj['name'] = prod_obj['title']
+        single_prod_obj['category'] = categoryy.objects.filter(id = prod_obj['category']).values_list('category',flat=True)[0]
+        single_prod_obj['image'] = prod_obj['image'].split(',')[0]
+        single_prod_obj['size'] = [i for i in prod_obj['size'].split('|') if i == data['size']][0]
+        single_prod_obj['unit_price'] = [int(prod_obj['price'].split('|')[i]) for i in range(len(prod_obj['size'].split('|'))) if prod_obj['size'].split('|')[i] == data['size']][0]
+        single_prod_obj['net_price'] = round(single_prod_obj['unit_price'] - (single_prod_obj['unit_price'] * int(prod_obj['discount'])/100))
+        single_prod_obj['quantity'] = '1'
+        single_prod_obj['price'] = single_prod_obj['net_price'] * int(single_prod_obj['quantity'])
+        added_products.append(single_prod_obj)
+    res['added_products'] = added_products
+    if len(added_products) > 0:
+        payment = pd.DataFrame(added_products)
+        payment_details =  {
+                                'sub_total': sum(list(payment['price'])),
+                                'shipping': 0,
+                                'total': sum(list(payment['price'])) + 0,
+                            }
+    else:
+        payment_details =  {
+                                'sub_total': '',
+                                'shipping': '',
+                                'total': '',
+                            }
+    res['payment_details'] = payment_details
+    return Response(res)
+
+@api_view(['POST'])
+def updateAddedProductsQuantity(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    added_products = eval(data['data'])
+    if data['update_type'] == '+':
+        added_products[int(data['index'])]['quantity'] = int(added_products[int(data['index'])]['quantity']) + 1
+        added_products[int(data['index'])]['price'] = added_products[int(data['index'])]['net_price'] * int(added_products[int(data['index'])]['quantity'])
+    else:
+        if int(added_products[int(data['index'])]['quantity']) > 1:
+            added_products[int(data['index'])]['quantity'] = int(added_products[int(data['index'])]['quantity']) - 1
+            added_products[int(data['index'])]['price'] = added_products[int(data['index'])]['net_price'] * int(added_products[int(data['index'])]['quantity'])
+
+        else:
+            del added_products[int(data['index'])]
+    res['added_products'] = added_products
+    if len(added_products) > 0:
+        payment = pd.DataFrame(added_products)
+        payment_details =  {
+                                'sub_total': sum(list(payment['price'])),
+                                'shipping': 0,
+                                'total': sum(list(payment['price'])) + 0,
+                            }
+    else:
+        payment_details =  {
+                                'sub_total': '',
+                                'shipping': '',
+                                'total': '',
+                            }
+    res['payment_details'] = payment_details
+    return Response(res)
+
+@api_view(['POST'])
+def updateAddedProductsDelete(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    added_products = eval(data['data'])
+    del added_products[int(data['index'])]
+    res['added_products'] = added_products
+    if len(added_products) > 0:
+        payment = pd.DataFrame(added_products)
+        payment_details =  {
+                                'sub_total': sum(list(payment['price'])),
+                                'shipping': 0,
+                                'total': sum(list(payment['price'])) + 0,
+                            }
+    else:
+        payment_details =  {
+                                'sub_total': '',
+                                'shipping': '',
+                                'total': '',
+                            }
+    res['payment_details'] = payment_details
+    return Response(res)
+
+@api_view(['POST'])
 def userView(request):
     data = request.data
     try:    
@@ -514,7 +730,8 @@ def userView(request):
     content['created_time'] = content['created_at'].apply(lambda x : str(x)[11:19])
     content['user'] = content.apply(createUserObj,axis = 1)
     content['phone_no'] = content.apply(lambda x : "+"+x['phone_code']+" "+x["phone_no"],axis=1)
-    content = content[['user_id','created_date','created_time','user','phone_no']].to_dict(orient='records')
+    content['status'] = content['status']
+    content = content[['user_id','created_date','created_time','user','phone_no','status']].to_dict(orient='records')
     res['content'] = content
     return Response(res)
 
@@ -575,4 +792,192 @@ def singleUserView(request):
         shipping_info["country"] = user_add_obj['country']
         shipping_info["pincode"] = user_add_obj['pincode']
     res['shipping_info'] = shipping_info
+    return Response(res)
+
+@api_view(['PATCH'])
+def userBlock(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+        user = user_data.objects.get(id = data['user_id'])
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    if user.status:
+        status = False
+        message = "User blocked successfully"
+    else:
+        status = True
+        message = "User unblocked successfully"
+    user_data.objects.filter(id = data['user_id']).update(status = status)
+    res = {
+            'status' : True,
+            'message': message 
+          }
+    return Response(res)
+
+@api_view(['POST'])
+def addUser(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+        user = user_data.objects.get(id = data['user_id'])
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    if data["email"] in user_data.objects.values_list('email',flat=True):
+            return Response({'message':'Email already exist',
+                            'status':False    
+                            })
+    if data["phone_no"] in user_data.objects.values_list('phone_no',flat=True):
+        return Response({'message':'Phone number already exist',
+                        'status':False 
+                        })
+    user_data_obj = user_data(
+                        first_name = data['first_name'],
+                        last_name = data['last_name'],
+                        email = data['email'],
+                        gender = data['gender'],
+                        dob = data['dob'],
+                        phone_code = data['isd'],
+                        phone_no = data['phone_no'],
+                        admin_create_status = True,
+    )
+    user_data_obj.save()
+    new_id = user_data_obj.id
+    user_add_data = user_address(
+                                    user_id = new_id,
+                                    add_line_1 = data['address_line_1'],  
+                                    add_line_2 = data['address_line_2'],
+                                    landmark = data['landmark'],              
+                                    city = data['city'],
+                                    state = data['state'],
+                                    country = data['country'],
+                                    pincode = data['zip'],
+                                )
+    
+    user_add_data.save()
+    res = {
+            'status':True,
+            'message':'User added successfully'
+          }
+    return Response(res)
+
+@api_view(['POST'])
+def adminStartPayment(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+        user = user_data.objects.get(id = data['customer_details']['id'])
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    order_data = {}
+    order_data['address_info'] = data['shipping_info']
+    order_data['items'] = data['added_products']
+    order_data['item_total'] = data['payment_details']['sub_total']
+    order_data['delivery_charges'] = data['payment_details']['shipping']
+    order_data['order_total'] = data['payment_details']['total']
+    amount = order_data['order_total']
+    client = razorpay.Client(auth=('rzp_test_gHJS0k5aSWUMQc', '8hPVwKRnj4DZ7SB1wyW1miaf'))
+    payment = client.order.create({"amount": eval(str(amount)) * 100, 
+                                   "currency": "INR", 
+                                   "payment_capture": "1"})
+    order = PaymentOrder(
+                            order_product=order_data, 
+                            order_amount=amount, 
+                            order_payment_id=payment['id'],
+                            user_id=str(data['customer_details']['id']),
+                            admin_placed_status = True,
+                        )
+    order.save()
+    order_id = order.id
+    order_data = PaymentOrder.objects.filter(id = order_id).values().last()
+    data = {
+        "payment": payment,
+        "order": order_data
+    }
+    return Response(data)
+
+
+@api_view(['POST'])
+def adminHandlePaymentSuccess(request):
+    res = eval(request.data["response"])
+    ord_id =""
+    raz_pay_id = ""
+    raz_signature = ""
+    for key in res.keys():
+        if key == 'razorpay_order_id':
+            ord_id = res[key]
+        elif key == 'razorpay_payment_id':
+            raz_pay_id = res[key]
+        elif key == 'razorpay_signature':
+            raz_signature = res[key]
+    order = PaymentOrder.objects.get(order_payment_id=ord_id)
+    data = {
+            'razorpay_order_id': ord_id,
+            'razorpay_payment_id': raz_pay_id,
+            'razorpay_signature': raz_signature
+            }
+    client = razorpay.Client(auth=('rzp_test_gHJS0k5aSWUMQc', '8hPVwKRnj4DZ7SB1wyW1miaf'))
+    check = client.utility.verify_payment_signature(data)
+    if not check:
+        print("Redirect to error url or error page")
+        order = PaymentOrder.objects.filter(order_payment_id=ord_id).delete()
+        return Response({'error': 'Something went wrong'})
+    order.isPaid = True
+    order.order_status = 'placed'
+    order.save()
+    res_data = {
+                'message': 'payment successfully received!',
+                'status':True
+                }
+    return Response(res_data)
+
+
+@api_view(['POST'])
+def adminOrderMarkAsPaid(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+        user = user_data.objects.get(id = data['customer_details']['id'])
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    order_data = {}
+    order_data['address_info'] = data['shipping_info']
+    order_data['items'] = data['added_products']
+    order_data['item_total'] = data['payment_details']['sub_total']
+    order_data['delivery_charges'] = data['payment_details']['shipping']
+    order_data['order_total'] = data['payment_details']['total']
+    amount = order_data['order_total']
+    order = PaymentOrder(
+                            order_product=order_data, 
+                            order_amount=amount, 
+                            order_payment_id="null",
+                            user_id=str(data['customer_details']['id']),
+                            order_status = 'placed',
+                            admin_placed_status = True,
+                        )
+    order.save()
+    res = {
+                'message': 'Order received successfully!',
+                'status':True
+          }
     return Response(res)
