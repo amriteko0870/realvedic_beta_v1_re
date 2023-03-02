@@ -342,6 +342,7 @@ def UserCartView(request):
         cartItems['unit_price'] = cartItems.apply(getProductPrice,axis=1)
         cartItems['discount_price'] = cartItems.apply(getDiscountPrice,axis=1)
         cartItems['net_price'] = cartItems.apply(calculateNetPrice,axis=1)
+        cartItems['saved'] = cartItems.apply(lambda x :int(x['discount_price']) * int(x['quantity']),axis=1)
         # cartItems['tax_price'] = cartItems.apply(calculateTaxPrice,axis=1)
         # cartItems['price'] = cartItems.apply(calculatePrice,axis=1)
 
@@ -352,7 +353,7 @@ def UserCartView(request):
         cartItems['quantity'] = cartItems['quantity']
         cartItems['size'] = cartItems['size']
         cartItems['image'] = cartItems['product_id'].apply(getProductImage)
-        cartItems = cartItems[['id','product_id','name','unit_price','net_price','price','quantity','size','image']].to_dict(orient='records')
+        cartItems = cartItems[['id','product_id','name','unit_price','net_price','saved','price','quantity','size','image']].to_dict(orient='records')
         res['cartItems'] = cartItems[::-1]
 
         cart_total = {}

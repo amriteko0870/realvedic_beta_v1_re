@@ -61,12 +61,18 @@ def categoryPage2(request):
                     cart_status_array.append(False)
         return cart_status_array
 
+    def getDiscountPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['id']).values('discount','price').last()
+        discount = prod_obj['discount']
+        discount_array = []
+        for i in prod_obj['price'].split('|'):
+            discount_array.append(eval(str(i)) - ((eval(str(i)) * 100) // (100 + eval(discount))))
+        # return eval(str(row['unit_price'])) - ((eval(str(row['unit_price'])) * 100) // (100 + eval(discount)))
+        return discount_array
     def getNetPriceArray(x):
         net_price = []
-        dis = x['discount']
-        # print(x['unit_price'])
-        for i in x['unit_price']:
-            net_price.append(str(round(int(i) - (int(i) * int(dis)/100))))
+        for i in range(len(x['unit_price'])):
+            net_price.append(str(round(int(x['unit_price'][i]) - (int(x['discount'][i])))))
         return net_price
     
     products = pd.DataFrame(products)
@@ -78,6 +84,7 @@ def categoryPage2(request):
     products['image'] = products['image'].apply(getSingleImage)
     products['weight'] = products['size'].apply(splitByPipe)
     products['unit_price'] = products['price'].apply(splitByPipe)
+    products['discount'] = products.apply(getDiscountPrice,axis=1)
     products['net_price'] = products.apply(getNetPriceArray,axis=1)
     products['cart_status'] = products['id'].apply(cartStatusCheck)
     products['cart_status_array'] = products.apply(getCartStatusArray,axis=1)#,
@@ -146,13 +153,21 @@ def landing_page2(request):
                 else:
                     cart_status_array.append(False)
         return cart_status_array
+    
+    def getDiscountPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['id']).values('discount','price').last()
+        discount = prod_obj['discount']
+        discount_array = []
+        for i in prod_obj['price'].split('|'):
+            discount_array.append(eval(str(i)) - ((eval(str(i)) * 100) // (100 + eval(discount))))
+        # return eval(str(row['unit_price'])) - ((eval(str(row['unit_price'])) * 100) // (100 + eval(discount)))
+        return discount_array
     def getNetPriceArray(x):
         net_price = []
-        dis = x['discount']
-        # print(x['unit_price'])
-        for i in x['unit_price']:
-            net_price.append(str(round(int(i) - (int(i) * int(dis)/100))))
+        for i in range(len(x['unit_price'])):
+            net_price.append(str(round(int(x['unit_price'][i]) - (int(x['discount'][i])))))
         return net_price
+        # return eval(str(x['unit_price'])) - eval(str(x['discount_price']))
 
     top_seller = Product_data.objects.values('id','image','title','size','price','discount')
     top_seller = pd.DataFrame(top_seller)
@@ -164,6 +179,7 @@ def landing_page2(request):
     top_seller['image'] = top_seller['image'].apply(singleImageGet)
     top_seller['weight'] = top_seller['size'].apply(splitPipe)
     top_seller['unit_price'] = top_seller['price'].apply(splitPipe)
+    top_seller['discount'] = top_seller.apply(getDiscountPrice,axis=1)
     top_seller['net_price'] = top_seller.apply(getNetPriceArray,axis=1)
     top_seller['cart_status'] = top_seller['id'].apply(cartStatusCheck)
     top_seller['cart_status_array'] = top_seller.apply(getCartStatusArray,axis=1)#,
@@ -182,8 +198,8 @@ def landing_page2(request):
     small_crousel = small_crousel.to_dict(orient='records')
     res['small_carousal_images'] = small_crousel
 
-    large_crousel = images_and_banners.objects.filter(title__contains='large_carousal_images_')\
-                                              .values('image','product_id')
+    large_crousel = images_and_banners.objects.filter(title='large_carousal_images')\
+                                              .values('image','product_id','type')
     res['large_carousal_images'] = large_crousel
 
     single_product_details = {}
@@ -267,6 +283,7 @@ def single_product_view2(request):
         df_user_id = 'n_'+cart_status_user_id
     else:
         df_user_id = 'u_'+cart_status_user_id
+    
     product_details = {}
     product_details['id'] = product_info['id']
     product_details['title'] = product_info['title']
@@ -281,7 +298,7 @@ def single_product_view2(request):
                                                     {
                                                         'weight':product_info['size'].split('|'),
                                                         'price':product_info['price'].split('|'),
-                                                        'offer_price': map(lambda x : str(round((int(x) * 100)/(100 + int(product_info['discount'])))),
+                                                        'offer_price': map(lambda x : str(round((int(x) * 100)//(100 + int(product_info['discount'])))),
                                                                            product_info['price'].split('|'))      
                                                     }
                                                ).to_dict(orient="records")
@@ -354,12 +371,18 @@ def recently_viewed_oc(request):
                 else:
                     cart_status_array.append(False)
         return cart_status_array
+    def getDiscountPrice(row):
+        prod_obj = Product_data.objects.filter(id = row['id']).values('discount','price').last()
+        discount = prod_obj['discount']
+        discount_array = []
+        for i in prod_obj['price'].split('|'):
+            discount_array.append(eval(str(i)) - ((eval(str(i)) * 100) // (100 + eval(discount))))
+        # return eval(str(row['unit_price'])) - ((eval(str(row['unit_price'])) * 100) // (100 + eval(discount)))
+        return discount_array
     def getNetPriceArray(x):
         net_price = []
-        dis = x['discount']
-        # print(x['unit_price'])
-        for i in x['unit_price']:
-            net_price.append(str(round(int(i) - (int(i) * int(dis)/100))))
+        for i in range(len(x['unit_price'])):
+            net_price.append(str(round(int(x['unit_price'][i]) - (int(x['discount'][i])))))
         return net_price
     
     products = pd.DataFrame(products)
@@ -371,6 +394,7 @@ def recently_viewed_oc(request):
     products['image'] = products['image'].apply(getSingleImage)
     products['weight'] = products['size'].apply(splitByPipe)
     products['unit_price'] = products['price'].apply(splitByPipe)
+    products['discount'] = products.apply(getDiscountPrice,axis=1)
     products['net_price'] = products.apply(getNetPriceArray,axis=1)
     products['cart_status'] = products['id'].apply(cartStatusCheck)
     products['cart_status_array'] = products.apply(getCartStatusArray,axis=1)#,

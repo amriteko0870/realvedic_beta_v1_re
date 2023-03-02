@@ -823,10 +823,10 @@ def userBlock(request):
 @api_view(['POST'])
 def addUser(request):
     data = request.data
+    print(data)
     try:    
         token = data['token']
         admin_login.objects.get(token = token)
-        user = user_data.objects.get(id = data['user_id'])
     except:
         res = {
                 'status':False,
@@ -980,3 +980,81 @@ def adminOrderMarkAsPaid(request):
                 'status':True
           }
     return Response(res)
+
+@api_view(['POST'])
+def bannerUploadCategoryProducts(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    category_list = categoryy.objects.exclude(category = 'All Products').annotate(name = F('category')).values('id','name')
+    res['category_list'] = category_list
+    product_list = Product_data.objects.annotate(name = F('title')).values('id','name')
+    res['product_list'] = product_list
+    return Response(res)
+
+@api_view(['POST'])
+def bannerImageUpload(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    img = request.FILES['file']
+    img_path = 'img/'
+    fs = FileSystemStorage()
+    img_path = img_path+img.name
+    uploaded_file = fs.save(img_path, img)
+    updated_value = 'media/'+uploaded_file
+    res = {'status':True,
+           'image':updated_value}
+    return Response(res)
+
+@api_view(['POST'])
+def largeCarousalImagesUpload(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    if data['banner_type'] == 'offer':
+        banner_obj = images_and_banners(
+                                            title = 'large_carousal_images',
+                                            image = data['desktop_image'],
+                                            mobile_image = data['mobile_image'],
+                                            product_id = str(data['selected_id']),
+                                            type = 'p' if data['offer_type'] == 'products' else 'c',
+                                        )
+    else:
+        banner_obj = images_and_banners(
+                                            title = 'large_carousal_images',
+                                            image = data['desktop_image'],
+                                            mobile_image = data['mobile_image']
+                                        )
+    if data['offer_type'] == 'products':
+        Product_data.objects.filter(id = data['selected_id']).update(discount = data['discount'])
+    else:
+        Product_data.objects.filter(category = data['selected_id']).update(discount = data['discount'])
+    banner_obj.save()
+    res = {
+            'status':True,
+            'message':'Banner added successfully'
+    }
+    return Response(data)

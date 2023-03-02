@@ -28,4 +28,8 @@ urlpatterns = [
                 path('adminStartPayment',views.adminStartPayment,name='adminStartPayment'),  
                 path('adminHandlePaymentSuccess',views.adminHandlePaymentSuccess,name='adminHandlePaymentSuccess'),  
                 path('adminOrderMarkAsPaid',views.adminOrderMarkAsPaid,name='adminOrderMarkAsPaid'),  
+                path('bannerUploadCategoryProducts',views.bannerUploadCategoryProducts,name='bannerUploadCategoryProducts'),  
+                path('bannerImageUpload',views.bannerImageUpload,name='bannerImageUpload'),  
+                path('largeCarousalImagesUpload',views.largeCarousalImagesUpload,name='largeCarousalImagesUpload'),  
+                
               ]+static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)
