@@ -241,7 +241,7 @@ def add_to_cart(request):
         user_id = user.id
     except:
         no_user_flag = True
-        if no_login_token == 'null':
+        if no_login_token == 'null' or noLoginUser.objects.filter(token = no_login_token).count() == 0:
             data = noLoginUser(token='token')
             data.save()
             new_id = str(data.id)

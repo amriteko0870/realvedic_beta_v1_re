@@ -599,7 +599,7 @@ def updateAddedProducts(request):
     flag = False
     added_products = eval(data['added_products'])
     for i in added_products:
-        if data['prod_id'] == str(i['id']) and data['size'] == i['size']:
+        if data['prod_id'] == str(i['product_id']) and data['size'] == i['size']:
             i['quantity'] = int(i['quantity']) + 1
             i['price'] = i['net_price'] * int(i['quantity'])
             flag = True
@@ -755,7 +755,7 @@ def singleUserView(request):
         items["title"] = items['name']
         items["quantity"] = items['quantity']
         items["weight"] = items['size']
-        items["price"] = items['final_net_price']
+        items["price"] = items['price']
         items = items[['image','title','quantity','weight','price']].to_dict(orient='records')
         return items
     user_id = data['user_id']
@@ -934,9 +934,8 @@ def adminHandlePaymentSuccess(request):
     client = razorpay.Client(auth=('rzp_test_gHJS0k5aSWUMQc', '8hPVwKRnj4DZ7SB1wyW1miaf'))
     check = client.utility.verify_payment_signature(data)
     if not check:
-        print("Redirect to error url or error page")
         order = PaymentOrder.objects.filter(order_payment_id=ord_id).delete()
-        return Response({'error': 'Something went wrong'})
+        return Response({'message': 'Something went wrong','status':False})
     order.isPaid = True
     order.order_status = 'placed'
     order.save()
