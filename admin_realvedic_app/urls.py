@@ -31,5 +31,13 @@ urlpatterns = [
                 path('bannerUploadCategoryProducts',views.bannerUploadCategoryProducts,name='bannerUploadCategoryProducts'),  
                 path('bannerImageUpload',views.bannerImageUpload,name='bannerImageUpload'),  
                 path('largeCarousalImagesUpload',views.largeCarousalImagesUpload,name='largeCarousalImagesUpload'),  
+                path('heroBannerImageUpload',views.heroBannerImageUpload,name='heroBannerImageUpload'),  
+                path('bannerImagesUpload',views.bannerImagesUpload,name='bannerImagesUpload'),  
+                path('adminBannerView',views.adminBannerView,name='adminBannerView'),  
+                path('deleteBanner',views.deleteBanner,name='deleteBanner'), 
+                path('adminCategoryListView',views.adminCategoryListView,name='adminCategoryListView'), 
+                path('adminEditCategory',views.adminEditCategory,name='adminEditCategory'), 
+                path('categoryIconUpload',views.categoryIconUpload,name='categoryIconUpload'), 
+                path('adminCreateCategory',views.adminCreateCategory,name='adminCreateCategory'), 
                 
               ]+static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)

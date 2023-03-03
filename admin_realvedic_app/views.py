@@ -1014,13 +1014,73 @@ def bannerImageUpload(request):
         return Response(res)
     img = request.FILES['file']
     img_path = 'img/'
+    pil_img = PIL.Image.open(img)
+    wid, hgt = pil_img.size
+    if wid < 1000 or hgt < 400:
+        res = {'status':False,'message':'Please provide minimum required resolution'}
+        return Response(res)
+    else:
+        if 2.6 > wid/hgt >= 2.5:
+            pass
+        else:
+            res = {'status':False,'message':'Image does not meet required aspect ratio'}
+            return Response(res)
+        
     fs = FileSystemStorage()
     img_path = img_path+img.name
     uploaded_file = fs.save(img_path, img)
     updated_value = 'media/'+uploaded_file
+    
     res = {'status':True,
            'image':updated_value}
     return Response(res)
+
+
+@api_view(['POST'])
+def heroBannerImageUpload(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    img = request.FILES['file']
+    banner_type = data['banner_type']
+    img_path = 'img/'
+    pil_img = PIL.Image.open(img)
+    wid, hgt = pil_img.size
+    if banner_type == 'mobile':
+        r_wid = 600
+        r_hgt = 300
+        r_aspect_ratio = 2.0
+    elif banner_type == 'desktop':
+        r_wid = 900
+        r_hgt = 200
+        r_aspect_ratio = 4.5
+    if wid < r_wid or hgt < r_hgt:
+        res = {'status':False,'message':'Please provide minimum required resolution'}
+        return Response(res)
+    else:
+        if r_aspect_ratio + 0.1 > wid/hgt >= r_aspect_ratio:
+            pass
+        else:
+            res = {'status':False,'message':'Image does not meet required aspect ratio'}
+            return Response(res)
+        
+    fs = FileSystemStorage()
+    img_path = img_path+img.name
+    uploaded_file = fs.save(img_path, img)
+    updated_value = 'media/'+uploaded_file
+    
+    res = {'status':True,
+           'image':updated_value}
+    return Response(res)
+
+
 
 @api_view(['POST'])
 def largeCarousalImagesUpload(request):
@@ -1038,7 +1098,6 @@ def largeCarousalImagesUpload(request):
         banner_obj = images_and_banners(
                                             title = 'large_carousal_images',
                                             image = data['desktop_image'],
-                                            mobile_image = data['mobile_image'],
                                             product_id = str(data['selected_id']),
                                             type = 'p' if data['offer_type'] == 'products' else 'c',
                                         )
@@ -1046,8 +1105,7 @@ def largeCarousalImagesUpload(request):
         banner_obj = images_and_banners(
                                             title = 'large_carousal_images',
                                             image = data['desktop_image'],
-                                            mobile_image = data['mobile_image']
-                                        )
+                                       )
     if data['offer_type'] == 'products':
         Product_data.objects.filter(id = data['selected_id']).update(discount = data['discount'])
     else:
@@ -1057,4 +1115,230 @@ def largeCarousalImagesUpload(request):
             'status':True,
             'message':'Banner added successfully'
     }
-    return Response(data)
+    return Response(res)
+
+
+@api_view(['POST'])
+def bannerImagesUpload(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    banner_obj = images_and_banners(
+                                    title = 'banner',
+                                    image = data['hero_desktop'],
+                                    mobile_image = data['hero_mobile'] 
+                                    )
+    banner_obj.save()
+    res = {
+            'status':True,
+            'message':'Banner added successfully'
+    }
+    return Response(res)
+
+
+@api_view(['POST'])
+def adminBannerView(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    title = ['Image', 'Banner Type', 'Usage In', 'Offer', 'Action']
+    hero = {}
+    hero['title'] = title
+    content = images_and_banners.objects.filter(title = 'banner').values()
+    content = pd.DataFrame(content)
+    content['img_id'] = content['id']
+    content['image'] = content['image']
+    content['banner_type'] = content['type'].apply(lambda x : 'Offer' if x != '' else 'Normal')
+    content['use_in'] = content['type'].apply(lambda x : 'Product' if x == 'p' else 'category' if x == 'c' else '-')
+    content['discount'] = content['discount'].apply(lambda x : str(x)+' %' if x != '' else '-')
+    content = content[['img_id','image','banner_type','use_in','discount']]
+    content = content.to_dict(orient='records')
+    hero['content'] = content
+    res['hero'] = hero
+
+    offer = {}
+    offer['title'] = title
+    content = images_and_banners.objects.filter(title = 'large_carousal_images').values()
+    content = pd.DataFrame(content)
+    content['img_id'] = content['id']
+    content['image'] = content['image']
+    content['banner_type'] = content['type'].apply(lambda x : 'Offer' if x != '' else 'Normal')
+    content['use_in'] = content['type'].apply(lambda x : 'Product' if x == 'p' else 'category' if x == 'c' else '-')
+    content['discount'] = content['discount'].apply(lambda x : str(x)+' %' if x != '' else '-')
+    content = content[['img_id','image','banner_type','use_in','discount']]
+    content = content.to_dict(orient='records')
+    offer['content'] = content
+    res['offer'] = offer
+    return Response(res)
+
+@api_view(['POST'])
+def deleteBanner(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    images_and_banners.objects.filter(id = data['img_id']).delete()
+    res = {
+            'status':True,
+            'message':'Delete Successful'
+          }
+    return Response(res)
+
+@api_view(['POST'])
+def adminCategoryListView(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    title = ['ID', 'Name', 'Baner', 'Icon', 'Action']
+    res = {}
+    res['title'] = title
+    content = categoryy.objects.exclude(category = 'All Products').values()
+    content = pd.DataFrame(content)
+    content['id'] = content['id']
+    content['name'] = content['category']
+    content['desktop_banner'] = content['category_banner'] 
+    content['mobile_banner'] = content['category_banner_mobile'] 
+    content['icon'] = content['category_image']
+    content = content[['id','name','desktop_banner','mobile_banner','icon']]
+    content = content.to_dict(orient= 'records')
+    res['content'] = content
+    return Response(res)
+
+@api_view(['POST','PUT'])
+def adminEditCategory(request):
+    if request.method == 'POST':
+        data = request.data
+        try:    
+            token = data['token']
+            admin_login.objects.get(token = token)
+        except:
+            res = {
+                    'status':False,
+                    'message':'Something went wrong'
+                }
+            return Response(res)
+        cat_obj = categoryy.objects.filter(id = data['cat_id']).values().last()
+        res = {}
+        res['token'] = token
+        res['cat_id'] = cat_obj['id']
+        res['name'] = cat_obj['category']
+        res['desktop_banner'] = cat_obj['category_banner'] 
+        res['mobile_banner'] = cat_obj['category_banner_mobile'] 
+        res['icon'] = cat_obj['category_image'] 
+        return Response(res)
+    if request.method == 'PUT':
+        data = request.data
+        try:    
+            token = data['token']
+            admin_login.objects.get(token = token)
+        except:
+            res = {
+                    'status':False,
+                    'message':'Something went wrong'
+                }
+            return Response(res)
+        categoryy.objects.filter(id = data['cat_id']).update(
+                                                                category = data['name'],
+                                                                category_banner = data['desktop_banner'],
+                                                                category_banner_mobile = data['mobile_banner'],
+                                                                category_image = data['icon'],
+                                                            )
+        res = {
+                'status':True,
+                'message':'Category updated successfully'
+              }
+        return Response(res)
+
+
+@api_view(['POST'])
+def categoryIconUpload(request):
+    img = request.FILES['file']
+    if str(img.name).split('.')[1] == 'svg':
+        fs = FileSystemStorage()
+        img_path = 'img/'
+        img_path = img_path+img.name
+        uploaded_file = fs.save(img_path, img)
+        updated_value = 'media/'+uploaded_file
+        res = {'status':True,
+           'image':updated_value}
+    else:
+        res = {'status':False,
+           'message':'Only SVG file allowed'}
+    return Response(res)
+
+
+@api_view(['POST'])
+def adminCreateCategory(request):
+    data = request.data
+    try:    
+        token = data['token']
+        admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    try:
+        category = data['name']
+        category_banner = data['desktop_banner']
+        category_banner_mobile = data['mobile_banner']
+        category_image = data['icon']
+    except:
+        res = {
+                'status':False,
+                'message':'All field are required'
+            }
+        return Response(res)
+    cat_obj = categoryy(
+                            category = data['name'],
+                            category_banner = data['desktop_banner'],
+                            category_banner_mobile = data['mobile_banner'],
+                            category_image = data['icon'],
+                        )
+    cat_obj.save()
+    res = {'status':True,'message':'Category created successfully'}
+    return Response(res) 
+    
+# @api_view(['POST'])
+# def adminDeleteCategory(request):
+#     data = request.data
+#     try:    
+#         token = data['token']
+#         admin_login.objects.get(token = token)
+#     except:
+#         res = {
+#                 'status':False,
+#                 'message':'Something went wrong'
+#             }
+#         return Response(res)
+#     Product_data.objects.filter(category = data['cat_id']).update(category = 'u')
+#     categoryy.objects.filter(id = data['cat_id']).delete()

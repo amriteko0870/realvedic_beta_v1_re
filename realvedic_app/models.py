@@ -78,6 +78,7 @@ class images_and_banners(models.Model):
     image=models.TextField()
     mobile_image=models.TextField(blank=True)
     product_id = models.TextField(blank=True)
+    discount = models.TextField(blank=True)
     type = models.TextField(blank=True)
 
 class blogs(models.Model):

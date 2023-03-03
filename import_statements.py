@@ -8,7 +8,8 @@ from operator import itemgetter
 import os
 import random
 import json
-
+import PIL
+from PIL import Image
 
 #-------------------------Django Modules---------------------------------------------
 from django.http import Http404, HttpResponse, JsonResponse,FileResponse

@@ -122,7 +122,12 @@ def landing_page2(request):
                                                 image = F('category_image')
                                              )\
                                     .values('id','title','image')
-    res['tab'] = list(category_obj)[::-1]
+    category_obj_all_prod = categoryy.objects.filter(category = 'All Products').annotate(
+                                                title = F('category'),
+                                                image = F('category_image')
+                                             )\
+                                    .values('id','title','image')
+    res['tab'] = list(category_obj_all_prod)+list(category_obj)[::-1]
     res['banner'] = images_and_banners.objects.filter(title = 'banner').values()
     res['mobile_banner'] = images_and_banners.objects.filter(title = 'mobile_banner').values()
     def singleImageGet(x):
@@ -342,7 +347,7 @@ def recently_viewed_oc(request):
             cart_status_user_id = 'u'#,
             cart_product_ids = []
 
-    products = Product_data.objects.order_by('?').values('id','title','image','size','price','discount')[:5]
+    products = Product_data.objects.values('id','title','image','size','price','discount')[:5]
     
     def getSingleImage(x):
         return x.split(',')[0]

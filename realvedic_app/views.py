@@ -19,12 +19,17 @@ def landing_page(request):
             cart_product_ids = []
     
     res = {}
-    category_obj = categoryy.objects.annotate(
+    category_obj = categoryy.objects.exclude(category = 'All Products').annotate(
                                                 title = F('category'),
                                                 image = F('category_image')
                                              )\
                                     .values('id','title','image')
-    res['tab'] = list(category_obj)[::-1]
+    category_obj_all_prod = categoryy.objects.filter(category = 'All Products').annotate(
+                                                title = F('category'),
+                                                image = F('category_image')
+                                             )\
+                                    .values('id','title','image')
+    res['tab'] = list(category_obj_all_prod)+list(category_obj)[::-1]
     res['banner'] = images_and_banners.objects.filter(title = 'banner').values()
     
     def singleImageGet(x):
