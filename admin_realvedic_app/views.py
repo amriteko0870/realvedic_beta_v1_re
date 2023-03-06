@@ -75,13 +75,18 @@ def adminProductDelete(request):
     product_id = data['product_id']
     token = data['token']
     try:
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
                 'message':'Something went wrong'
               }
         return Response(res)
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = Product_data.objects.filter(id = product_id).values().last()['title'] + ' was deleted'
+                        )
+    log_obj.save()
     Product_data.objects.filter(id = product_id).delete()
     res = {
             'status':True,
@@ -204,7 +209,7 @@ def singleProductEdit(request):
     data = request.data
     token = data['token']
     try:
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
@@ -252,10 +257,16 @@ def singleProductEdit(request):
                                                             HSN = HSN,
                                                             SKU = SKU,
                                                         )
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = Product_data.objects.filter(id = product_id).values().last()['title'] + ' was edited'
+                        )
+    log_obj.save()
     res = {
             "status":True,
             "message":"product updated successfuly" 
             }
+    
     return Response(res)
 
 @api_view(['POST','PUT'])
@@ -306,7 +317,7 @@ def addNewProduct(request):
         data = request.data['data']
         token = data['token']
         try:
-            admin_login.objects.get(token = token)
+            a_user = admin_login.objects.get(token = token)
         except:
             res = {
                     'status':False,
@@ -354,6 +365,11 @@ def addNewProduct(request):
                                 SKU = SKU,
                             )
         data.save()
+        log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = Product_data.objects.filter(id = data.id).values().last()['title'] + ' was created'
+                        )
+        log_obj.save()
         res = {
                 "status":True,
                 "message":"product added successfuly" 
@@ -423,11 +439,12 @@ def singleOrderView(request):
     items['image'] = items['image']
     items['title'] = items['name']
     items['unit_price'] = items['unit_price']
+    items['net_price'] = items['net_price']
     items['size'] = items['size']
     items['quantity'] = items['quantity']
     items['quantity_price'] = items['price']
-    items['category'] = items['product_id'].apply(getCategoryName)
-    items = items[['id','image','title','unit_price','size','quantity','quantity_price','category']].to_dict(orient='records')
+    items['category'] = items['category']
+    items = items[['id','image','title','unit_price','net_price','size','quantity','quantity_price','category']].to_dict(orient='records')
     res['items'] = items
     payment_info = {}
     payment_info["sub_total"] = eval(order_obj['order_product'])['item_total']
@@ -467,7 +484,7 @@ def singleOrderEdit(request):
     data = request.data
     try:
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
@@ -485,6 +502,11 @@ def singleOrderEdit(request):
             }
         return Response(res)
     order_obj = PaymentOrder.objects.filter(id = order_id).update(order_status = order_status)
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'Order status with this order id '+order_id + ' was changed to '+order_status
+                        )
+    log_obj.save()
     res = {
                 'status':True,
                 'message':'Order updated successfully'
@@ -799,7 +821,7 @@ def userBlock(request):
     data = request.data
     try:    
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
         user = user_data.objects.get(id = data['user_id'])
     except:
         res = {
@@ -810,10 +832,21 @@ def userBlock(request):
     if user.status:
         status = False
         message = "User blocked successfully"
+        log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'user with id '+ str(user.id) +' and name '+ str(user.first_name)+' '+str(user.last_name)+' was blocked'
+                        )
+        log_obj.save()
     else:
         status = True
         message = "User unblocked successfully"
+        log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'user with id '+ str(user.id) +' and name '+ str(user.first_name)+' '+str(user.last_name)+' was unblocked'
+                        )
+        log_obj.save()
     user_data.objects.filter(id = data['user_id']).update(status = status)
+    
     res = {
             'status' : True,
             'message': message 
@@ -826,7 +859,7 @@ def addUser(request):
     print(data)
     try:    
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
@@ -865,6 +898,11 @@ def addUser(request):
                                 )
     
     user_add_data.save()
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'user with id '+ str(user_data_obj.id) +' and name '+ str(user_data_obj.first_name)+' '+str(user_data_obj.last_name)+' was created'
+                        )
+    log_obj.save()
     res = {
             'status':True,
             'message':'User added successfully'
@@ -914,6 +952,16 @@ def adminStartPayment(request):
 
 @api_view(['POST'])
 def adminHandlePaymentSuccess(request):
+    data = request.data
+    try:    
+        token = data['token']
+        a_user = admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
     res = eval(request.data["response"])
     ord_id =""
     raz_pay_id = ""
@@ -939,6 +987,11 @@ def adminHandlePaymentSuccess(request):
     order.isPaid = True
     order.order_status = 'placed'
     order.save()
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'Order with order id '+ str(order.id)+' was created by payment method'
+                        )
+    log_obj.save()
     res_data = {
                 'message': 'payment successfully received!',
                 'status':True
@@ -951,7 +1004,7 @@ def adminOrderMarkAsPaid(request):
     data = request.data
     try:    
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
         user = user_data.objects.get(id = data['customer_details']['id'])
     except:
         res = {
@@ -975,6 +1028,11 @@ def adminOrderMarkAsPaid(request):
                             admin_placed_status = True,
                         )
     order.save()
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'Order with order id '+ str(order.id)+' was created by Mark as paid method'
+                        )
+    log_obj.save()
     res = {
                 'message': 'Order received successfully!',
                 'status':True
@@ -1005,7 +1063,7 @@ def bannerImageUpload(request):
     data = request.data
     try:    
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
@@ -1087,7 +1145,7 @@ def largeCarousalImagesUpload(request):
     data = request.data
     try:    
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
@@ -1101,16 +1159,22 @@ def largeCarousalImagesUpload(request):
                                             product_id = str(data['selected_id']),
                                             type = 'p' if data['offer_type'] == 'products' else 'c',
                                         )
+        if data['offer_type'] == 'products':
+            Product_data.objects.filter(id = data['selected_id']).update(discount = data['discount'])
+        else:
+            Product_data.objects.filter(category = data['selected_id']).update(discount = data['discount'])
     else:
         banner_obj = images_and_banners(
                                             title = 'large_carousal_images',
                                             image = data['desktop_image'],
                                        )
-    if data['offer_type'] == 'products':
-        Product_data.objects.filter(id = data['selected_id']).update(discount = data['discount'])
-    else:
-        Product_data.objects.filter(category = data['selected_id']).update(discount = data['discount'])
+    
     banner_obj.save()
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'Offer section banner was added'
+                        )
+    log_obj.save()
     res = {
             'status':True,
             'message':'Banner added successfully'
@@ -1123,7 +1187,7 @@ def bannerImagesUpload(request):
     data = request.data
     try:    
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
@@ -1136,6 +1200,11 @@ def bannerImagesUpload(request):
                                     mobile_image = data['hero_mobile'] 
                                     )
     banner_obj.save()
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'Hero section banner was added'
+                        )
+    log_obj.save()
     res = {
             'status':True,
             'message':'Banner added successfully'
@@ -1191,14 +1260,27 @@ def deleteBanner(request):
     data = request.data
     try:    
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
                 'message':'Something went wrong'
             }
         return Response(res)
+    banner_type = data['banner_type']
     images_and_banners.objects.filter(id = data['img_id']).delete()
+    if banner_type == 'h':
+        log_obj = actionLogs(
+                                user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                                log_message  = 'Hero section banner was deleted'
+                            )
+        log_obj.save()
+    elif banner_type == 'o':
+        log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'Offer section banner was deleted'
+                        )
+        log_obj.save()
     res = {
             'status':True,
             'message':'Delete Successful'
@@ -1227,7 +1309,8 @@ def adminCategoryListView(request):
     content['desktop_banner'] = content['category_banner'] 
     content['mobile_banner'] = content['category_banner_mobile'] 
     content['icon'] = content['category_image']
-    content = content[['id','name','desktop_banner','mobile_banner','icon']]
+    content['status'] = content['status']
+    content = content[['id','name','desktop_banner','mobile_banner','icon','status']]
     content = content.to_dict(orient= 'records')
     res['content'] = content
     return Response(res)
@@ -1258,7 +1341,7 @@ def adminEditCategory(request):
         data = request.data
         try:    
             token = data['token']
-            admin_login.objects.get(token = token)
+            a_user = admin_login.objects.get(token = token)
         except:
             res = {
                     'status':False,
@@ -1271,6 +1354,11 @@ def adminEditCategory(request):
                                                                 category_banner_mobile = data['mobile_banner'],
                                                                 category_image = data['icon'],
                                                             )
+        log_obj = actionLogs(
+                                user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                                log_message  = 'category with name '+ categoryy.objects.filter(id = data['cat_id']).values().last()['category']+' was edited'
+                            )
+        log_obj.save()
         res = {
                 'status':True,
                 'message':'Category updated successfully'
@@ -1300,7 +1388,7 @@ def adminCreateCategory(request):
     data = request.data
     try:    
         token = data['token']
-        admin_login.objects.get(token = token)
+        a_user = admin_login.objects.get(token = token)
     except:
         res = {
                 'status':False,
@@ -1325,20 +1413,132 @@ def adminCreateCategory(request):
                             category_image = data['icon'],
                         )
     cat_obj.save()
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'category with name '+ cat_obj.category+' was created'
+                        )
+    log_obj.save()
     res = {'status':True,'message':'Category created successfully'}
     return Response(res) 
     
-# @api_view(['POST'])
-# def adminDeleteCategory(request):
-#     data = request.data
-#     try:    
-#         token = data['token']
-#         admin_login.objects.get(token = token)
-#     except:
-#         res = {
-#                 'status':False,
-#                 'message':'Something went wrong'
-#             }
-#         return Response(res)
-#     Product_data.objects.filter(category = data['cat_id']).update(category = 'u')
-#     categoryy.objects.filter(id = data['cat_id']).delete()
+@api_view(['POST'])
+def adminCategoryDeactivate(request):
+    data = request.data
+    try:    
+        token = data['token']
+        a_user = admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    d_type = data['d_type']
+    cat_id = data['cat_id']
+    if d_type == 'c':
+        categoryy.objects.filter(id = cat_id).update(status = False)
+        log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'category with name '+ categoryy.objects.filter(id = data['cat_id']).values().last()['category']+' was deactivated without products'
+                            )
+        log_obj.save()
+        res = {
+                'status':True,
+                'message':'Category deactivated successfully'
+              }
+    elif d_type == 'b':
+        prod_list = Product_data.objects.filter(category = cat_id,status = True).values_list('id',flat=True)
+        prod_list = map(str, prod_list)
+        categoryy.objects.filter(id = cat_id).update(status = False,deactivated_products = ','.join(list(prod_list)))
+        Product_data.objects.filter(category = cat_id).update(status = False)
+        log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'category with name '+ categoryy.objects.filter(id = data['cat_id']).values().last()['category']+' was deactivated with products'
+                            )
+        log_obj.save()
+        res = {
+                'status':True,
+                'message':'Category and products deactivated successfully'
+              }
+    return Response(res)
+        
+@api_view(['POST'])
+def adminCategoryActivate(request):
+    data = request.data
+    try:    
+        token = data['token']
+        a_user = admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    cat_id = data['cat_id']
+    cat_obj = categoryy.objects.filter(id = cat_id)
+    deactivated_prod = cat_obj.values().last()['deactivated_products'].split(',')
+    deactivated_prod = [0] if deactivated_prod[0] == '' else deactivated_prod
+    cat_obj.update(status = True)
+    Product_data.objects.filter(id__in = deactivated_prod).update(status = True)
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'category with name '+ categoryy.objects.filter(id = data['cat_id']).values().last()['category']+' was activated'
+                            )
+    log_obj.save()
+    res = { 
+            'status':True,
+            'message':'Category activated successfully'
+          }
+    return Response(res)
+
+@api_view(['POST'])
+def adminDeleteCategory(request):
+    data = request.data
+    try:    
+        token = data['token']
+        a_user = admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    log_obj = actionLogs(
+                            user = a_user.first_name + ' ' + a_user.last_name + '|' + a_user.email,
+                            log_message  = 'category with name '+ categoryy.objects.filter(id = data['cat_id']).values().last()['category']+' was deleted'
+                        )
+    log_obj.save()
+    categoryy.objects.filter(id = data['cat_id']).delete()
+    Product_data.objects.filter(category = data['cat_id']).delete()
+    res = {
+            'status':True,
+            'message':'Category Deleted successfully'
+           }
+    return Response(res)
+
+@api_view(['POST'])
+def adminLogView(request):
+    data = request.data
+    try:    
+        token = data['token']
+        a_user = admin_login.objects.get(token = token)
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong'
+            }
+        return Response(res)
+    res = {}
+    title = ['Name', 'Log Message', 'Date', 'Time']
+    res['title'] = title
+    log_obj = actionLogs.objects.values()[::-1]
+    log_obj = pd.DataFrame(log_obj)
+    log_obj['id'] = log_obj['id']
+    log_obj['name'] = log_obj['user']
+    log_obj['log'] = log_obj['log_message']
+    log_obj['date'] = log_obj['date_time'].apply(lambda x : str(x)[:10])
+    log_obj['time'] = log_obj['date_time'].apply(lambda x : str(x)[11:19])
+    log_obj = log_obj[['id','name','log','date','time']]
+    log_obj = log_obj.to_dict(orient='records')
+    res['content'] = log_obj
+    return Response(res)

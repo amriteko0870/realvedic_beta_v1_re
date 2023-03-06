@@ -19,7 +19,7 @@ def landing_page(request):
             cart_product_ids = []
     
     res = {}
-    category_obj = categoryy.objects.exclude(category = 'All Products').annotate(
+    category_obj = categoryy.objects.exclude(category = 'All Products',status = False).annotate(
                                                 title = F('category'),
                                                 image = F('category_image')
                                              )\
@@ -46,7 +46,7 @@ def landing_page(request):
         dis = x['discount']
         for i in x['unit_price']:
             net_price.append(round(int(i) - (int(i) * int(dis)/100)))
-    top_seller = Product_data.objects.values('id','image','title','size','price','discount')
+    top_seller = Product_data.objects.exclude(status = False).values('id','image','title','size','price','discount')
     top_seller = pd.DataFrame(top_seller)
     top_seller['image'] = top_seller['image'].apply(singleImageGet)
     top_seller['weight'] = top_seller['size'].apply(splitPipe)
@@ -155,7 +155,7 @@ def single_product_view(request):
 def categoryPage(request):
     data = request.data
     category_id = data['category']
-    category_obj = categoryy.objects.filter(id = category_id).values().last()
+    category_obj = categoryy.objects.exclude(status = False).filter(id = category_id).values().last()
     res={}
     try:
         token = data['token']
@@ -199,7 +199,7 @@ def categoryPage(request):
 
 @api_view(['GET'])
 def NavbarCategoryView(request):
-    category_obj = categoryy.objects.values('id','category')
+    category_obj = categoryy.objects.exclude(status = False).values('id','category')
     category_obj = list(category_obj)[::-1]
     def categoryItems(x):
         def getSingleImage(y):
@@ -207,7 +207,7 @@ def NavbarCategoryView(request):
         if categoryy.objects.filter(id = x).values_list('category',flat=True)[0] == 'All Products':
             products = Product_data.objects.values('id','title','image')
         else:
-            products = Product_data.objects.filter(category = x).values('id','title','image')
+            products = Product_data.objects.exclude(status = False).filter(category = x).values('id','title','image')
         products = pd.DataFrame(products)
         products['image'] = products['image'].apply(getSingleImage)
         products = products.to_dict(orient='records')
@@ -219,7 +219,7 @@ def NavbarCategoryView(request):
 
 @api_view(['GET'])
 def search_bar(request):
-    products = Product_data.objects.values('id','title','category','image')
+    products = Product_data.objects.exclude(status = False).values('id','title','category','image')
     def getCategoryName(x):
         return categoryy.objects.filter(id = x).values_list('category',flat=True)[0]
     def getSingleImage(x):
@@ -241,6 +241,12 @@ def add_to_cart(request):
     # print('###########',no_login_token)
     # print('###########token',token)
     no_user_flag = False
+    if not Product_data.objects.filter(id = product_id).values().last()['status']:
+        res = {
+                'status':False,
+                'message':'Product not available'
+              }
+        return Response(res)
     try:
         user = user_data.objects.get(token = token)
         user_id = user.id
@@ -305,10 +311,33 @@ def UserCartView(request):
             no_user_id = noLoginUser.objects.filter(token = no_login_token).values_list('id',flat=True)[0]
         except:
             no_user_id = 'null'
+    deactivated_prod_list =  Product_data.objects.filter(status = False).values_list('id',flat=True)
     if no_user_flag == True:
+        deactive_prod_cart = user_cart.objects.filter(no_login_id = no_user_id,product_id__in = deactivated_prod_list ).values_list('product_id',flat=True)
+        if len(deactivated_prod_list) > 0:
+            
+            noti_obj = cart_notification(
+                                        user_id = no_user_id,
+                                        message = ','.join(list(Product_data.objects.filter(id__in = deactive_prod_cart)\
+                                                                                    .values_list('title',flat=True))) + ' are no longer in cart due to unavailability'
+                                    )
+            noti_obj.save()
+
+            user_cart.objects.filter(no_login_id = no_user_id,product_id__in = deactivated_prod_list ).delete()
         cartItems = user_cart.objects.filter(no_login_id = no_user_id).values('id','product_id','size','price_per_unit','quantity')
     else:
+        if len(deactivated_prod_list) > 0:
+            deactive_prod_cart = user_cart.objects.filter(user_id = user_id,product_id__in = deactivated_prod_list ).values_list('product_id',flat=True)
+            noti_obj = cart_notification(
+                                        user_id = user_id,
+                                        message = ','.join(list(Product_data.objects.filter(id__in = deactive_prod_cart)\
+                                                                                    .values_list('title',flat=True))) + ' are no longer in cart due to unavailability'
+                                    )
+            noti_obj.save()
+
+            user_cart.objects.filter(user_id = user_id,product_id__in = deactivated_prod_list ).delete()
         cartItems = user_cart.objects.filter(user_id = user_id).values('id','product_id','size','price_per_unit','quantity')
+    
     def getProductName(x):
         return Product_data.objects.filter(id=x).values_list('title',flat=True)[0]
     def getProductImage(x):
@@ -368,6 +397,8 @@ def UserCartView(request):
         # cart_total['tax'] = sum(list(cartItems['final_tax']))
         cart_total['final_price'] = cart_total['subtotal'] + cart_total['shipping']
         res['cart_total'] = cart_total
+
+        
     else:
         res['cartItems'] = cartItems
     return Response(res)
@@ -465,7 +496,7 @@ def login(request):
     if check_password(password,user.password):
         res = {
                 'status':True,
-                'message':'login successfull',
+                'message':'Login successfull',
                 'token':user.token
               }
     else:
@@ -497,7 +528,6 @@ def signUp(request,format=None):
         first_name = request.data['first_name']
         last_name = request.data['last_name']
         email = request.data['email']
-        dob = request.data['dob']
         phone_code = request.data['phone_code']
         phone_no = request.data['phone_no']
         password = request.data['password']
@@ -518,7 +548,6 @@ def signUp(request,format=None):
                             last_name = last_name,
                             email = email,
                             gender = gender,
-                            dob = dob,
                             phone_code = phone_code,
                             phone_no = phone_no,
                             password = enc_pass,
@@ -577,8 +606,12 @@ def checkout(request):
         address_info['country'] = ""
     res['address_info'] = address_info
     cartItems = user_cart.objects.filter(user_id = user.id).values()
+    print('Heloooooo',cartItems)
     def getProductName(x):
         return Product_data.objects.filter(id=x).values_list('title',flat=True)[0]
+    def getProductCategory(x):
+        cat_id = Product_data.objects.filter(id=x).values_list('category',flat=True)[0]
+        return categoryy.objects.filter(id = cat_id).values_list('category',flat=True)[0]
     def getProductImage(x):
         return Product_data.objects.filter(id = x).values_list('image',flat=True)[0].split(',')[0]
     def getProductPrice(row):
@@ -606,34 +639,37 @@ def checkout(request):
         return eval(str(row['tax_price'])) * eval(str(row['quantity']))
     def calculateFinalNetPrice(row):
         return eval(str(row['net_price'])) * eval(str(row['quantity']))
-    if len(cartItems) > 0:
+    if len(list(cartItems)) > 0:
         cartItems = pd.DataFrame(cartItems)
 
         cartItems['id'] = cartItems['id']
+        cartItems['product_id'] = cartItems['product_id']
         cartItems['name'] = cartItems['product_id'].apply(getProductName)
+        cartItems['category'] = cartItems['product_id'].apply(getProductCategory)
 
         cartItems['unit_price'] = cartItems.apply(getProductPrice,axis=1)
-        cartItems['discount_price'] = cartItems.apply(getDiscountPrice,axis=1)
+        cartItems['discount_price'] = cartItems.apply(getDiscountPrice,axis=1)#
         cartItems['net_price'] = cartItems.apply(calculateNetPrice,axis=1)
-        # cartItems['tax_price'] = cartItems.apply(calculateTaxPrice,axis=1)
-        # cartItems['price'] = cartItems.apply(calculatePrice,axis=1)
 
         cartItems['price'] = cartItems.apply(calculateFinalNetPrice,axis=1)
-        # cartItems['final_price'] = cartItems.apply(calculateFinalPrice,axis=1)
-        # cartItems['final_tax'] = cartItems.apply(calculateFinalTax,axis=1)
 
         cartItems['quantity'] = cartItems['quantity']
         cartItems['size'] = cartItems['size']
         cartItems['image'] = cartItems['product_id'].apply(getProductImage)
-        cartItems = cartItems[['id','product_id','name','unit_price','net_price','price','quantity','size','image']].to_dict(orient='records')
+        cartItems = cartItems[['id','product_id','name','category','unit_price','net_price','price','quantity','size','image']].to_dict(orient='records')
         res['items'] = cartItems[::-1]
+        cartItems = pd.DataFrame(cartItems)
+        res['item_total'] = sum(list(cartItems['price'])) 
+        res['delivery_charges'] = 0
+        # res['tax'] = sum(list(cartItems['final_tax']))
+        res['order_total'] = res['item_total'] + res['delivery_charges']
     else:
         res['items'] = []
-    cartItems = pd.DataFrame(cartItems)
-    res['item_total'] = sum(list(cartItems['price'])) 
-    res['delivery_charges'] = 0
-    # res['tax'] = sum(list(cartItems['final_tax']))
-    res['order_total'] = res['item_total'] + res['delivery_charges']
+        res['item_total'] = 0
+        res['delivery_charges'] = 0
+        # res['tax'] = sum(list(cartItems['final_tax']))
+        res['order_total'] = 0
+        res['message'] = 'Sorry for inconvenience, your products are out of stock'
     return Response(res)
 
 @api_view(['POST'])
@@ -699,7 +735,7 @@ def UserAccountEdit(request):
                         last_name = data['last_name'],
                         email = data['email'],
                         gender = data['gender'],
-                        dob = data['dob'],
+                        # dob = data['dob'],
                         phone_code = data['phone_code'],
                         phone_no = data['phone_no'],
                     )

@@ -41,6 +41,8 @@ class categoryy(models.Model):
     category_image=models.TextField()
     category_banner=models.TextField()
     category_banner_mobile=models.TextField()
+    status = models.BooleanField(default=True)
+    deactivated_products = models.TextField(blank=True) 
 #-----------------------------------------------------------------------------------------------
 order_status_choices=(
     ('placed','PLACED'),
@@ -104,7 +106,7 @@ class user_data(models.Model):
     last_name = models.TextField(blank=True)
     email = models.TextField()
     gender = models.TextField()
-    dob = models.TextField()
+    dob = models.TextField(blank=True)
     phone_code = models.TextField()
     phone_no = models.TextField()
     password = models.TextField(blank=True)
@@ -148,6 +150,10 @@ class doctor_info(models.Model):
       speciality=models.TextField(blank=True)
       available=models.TextField(blank=True)
       image=models.TextField()
+
+class cart_notification(models.Model):
+    user_id = models.TextField()
+    message = models.TextField()
 
 
 

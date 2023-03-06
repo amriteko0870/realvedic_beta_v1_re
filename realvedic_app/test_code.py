@@ -4,7 +4,7 @@ from import_statements import *
 def categoryPage2(request):
     data = request.data
     category_id = data['category']
-    category_obj = categoryy.objects.filter(id = category_id).values().last()
+    category_obj = categoryy.objects.exclude(status = False).filter(id = category_id).values().last()
     res={}
     no_login_status = False#,
     try:
@@ -29,9 +29,9 @@ def categoryPage2(request):
     res['category_banner'] = category_obj['category_banner']
     res['category_mobile_banner'] = category_obj['category_banner_mobile']
     if category_obj['category'] == 'All Products':
-        products = Product_data.objects.values('id','title','image','size','price','discount')
+        products = Product_data.objects.exclude(status = False).values('id','title','image','size','price','discount')
     else:
-        products = Product_data.objects.filter(category = category_id).values('id','title','image','size','price','discount')
+        products = Product_data.objects.exclude(status = False).filter(category = category_id).values('id','title','image','size','price','discount')
     
     def getSingleImage(x):
         return x.split(',')[0]
@@ -117,16 +117,16 @@ def landing_page2(request):
             cart_product_ids = []
     
     res = {}
-    category_obj = categoryy.objects.annotate(
+    category_obj = categoryy.objects.exclude(category = 'All Products').exclude(status = False).annotate(
                                                 title = F('category'),
                                                 image = F('category_image')
                                              )\
-                                    .values('id','title','image')
+                                    .values('id','title','image','status')
     category_obj_all_prod = categoryy.objects.filter(category = 'All Products').annotate(
                                                 title = F('category'),
                                                 image = F('category_image')
                                              )\
-                                    .values('id','title','image')
+                                    .values('id','title','image','status')
     res['tab'] = list(category_obj_all_prod)+list(category_obj)[::-1]
     res['banner'] = images_and_banners.objects.filter(title = 'banner').values()
     res['mobile_banner'] = images_and_banners.objects.filter(title = 'mobile_banner').values()
@@ -174,7 +174,7 @@ def landing_page2(request):
         return net_price
         # return eval(str(x['unit_price'])) - eval(str(x['discount_price']))
 
-    top_seller = Product_data.objects.values('id','image','title','size','price','discount')
+    top_seller = Product_data.objects.exclude(status = False).values('id','image','title','size','price','discount')
     top_seller = pd.DataFrame(top_seller)
     if no_login_status:#,
         df_user_id = 'n_'+cart_status_user_id
@@ -236,6 +236,12 @@ def single_product_view2(request):
     product_info = Product_data.objects.filter(id = product_id).values().last()
     res = {}
     no_login_status = False#,
+    if not Product_data.objects.filter(id = product_id).values().last()['status']:
+        res = {
+                'status':False,
+                'message':'Product not available'
+              }
+        return Response(res)
     try:
         token = request.data['token']
         user = user_data.objects.get(token = token)
@@ -347,7 +353,7 @@ def recently_viewed_oc(request):
             cart_status_user_id = 'u'#,
             cart_product_ids = []
 
-    products = Product_data.objects.values('id','title','image','size','price','discount')[:5]
+    products = Product_data.objects.exclude(status = False).values('id','title','image','size','price','discount')[:5]
     
     def getSingleImage(x):
         return x.split(',')[0]

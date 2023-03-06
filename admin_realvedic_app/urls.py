@@ -39,5 +39,9 @@ urlpatterns = [
                 path('adminEditCategory',views.adminEditCategory,name='adminEditCategory'), 
                 path('categoryIconUpload',views.categoryIconUpload,name='categoryIconUpload'), 
                 path('adminCreateCategory',views.adminCreateCategory,name='adminCreateCategory'), 
+                path('adminCategoryDeactivate',views.adminCategoryDeactivate,name='adminCategoryDeactivate'), 
+                path('adminCategoryActivate',views.adminCategoryActivate,name='adminCategoryActivate'), 
+                path('adminDeleteCategory',views.adminDeleteCategory,name='adminDeleteCategory'), 
+                path('adminLogView',views.adminLogView,name='adminLogView'), 
                 
               ]+static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)
