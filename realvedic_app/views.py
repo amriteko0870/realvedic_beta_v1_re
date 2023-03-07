@@ -508,7 +508,6 @@ def login(request):
     if no_login_token != 'null':
         no_user = noLoginUser.objects.get(token = no_login_token)
         no_login_id = no_user.id
-        print(no_login_id,"login view")
         no_login_cart = user_cart.objects.filter(no_login_id = no_login_id).values()
         for i in no_login_cart:
             user_cart_row = user_cart.objects.filter(user_id = user.id,product_id = i['product_id'],size = i['size']).values()
@@ -606,7 +605,6 @@ def checkout(request):
         address_info['country'] = ""
     res['address_info'] = address_info
     cartItems = user_cart.objects.filter(user_id = user.id).values()
-    print('Heloooooo',cartItems)
     def getProductName(x):
         return Product_data.objects.filter(id=x).values_list('title',flat=True)[0]
     def getProductCategory(x):
@@ -758,7 +756,6 @@ def UserAccountEdit(request):
 @api_view(['POST'])
 def start_payment(request):
     data = request.data
-    print(data)
     try:
         token = data['token']
         user = user_data.objects.get(token = token)
@@ -777,7 +774,7 @@ def start_payment(request):
         return Response(res)
     amount = order_data['order_total']
     order_product = str(order_data['items'])
-    client = razorpay.Client(auth=('rzp_test_gHJS0k5aSWUMQc', '8hPVwKRnj4DZ7SB1wyW1miaf'))
+    client = razorpay.Client(auth=(os.getenv('key_id'),os.getenv('key_secret') ))
     payment = client.order.create({"amount": eval(str(amount)) * 100, 
                                    "currency": "INR", 
                                    "payment_capture": "1"})
@@ -816,7 +813,8 @@ def handle_payment_success(request):
             'razorpay_payment_id': raz_pay_id,
             'razorpay_signature': raz_signature
             }
-    client = razorpay.Client(auth=('rzp_test_gHJS0k5aSWUMQc', '8hPVwKRnj4DZ7SB1wyW1miaf'))
+    # client = razorpay.Client(auth=('rzp_test_gHJS0k5aSWUMQc', '8hPVwKRnj4DZ7SB1wyW1miaf'))
+    client = razorpay.Client(auth=(os.getenv('key_id'),os.getenv('key_secret') ))
     check = client.utility.verify_payment_signature(data)
     if not check:
         print("Redirect to error url or error page")
@@ -897,3 +895,4 @@ def single_order_view(request):
     res['delivery_charges'] = eval(order.order_product)['delivery_charges']
     res['order_total'] = eval(order.order_product)['order_total']
     return Response(res)  
+

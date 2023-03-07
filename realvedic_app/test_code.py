@@ -129,7 +129,7 @@ def landing_page2(request):
                                     .values('id','title','image','status')
     res['tab'] = list(category_obj_all_prod)+list(category_obj)[::-1]
     res['banner'] = images_and_banners.objects.filter(title = 'banner').values()
-    res['mobile_banner'] = images_and_banners.objects.filter(title = 'mobile_banner').values()
+    res['mobile_banner'] = images_and_banners.objects.filter(title = 'banner').values()
     def singleImageGet(x):
         return x.split(',')[0]
     def splitPipe(x):
@@ -325,6 +325,7 @@ def single_product_view2(request):
                                                     'value': product_info['nutrition'].split('|')
                                                 }
                                              ).to_dict(orient="records")
+    res['status'] = True
     return Response(res)
 
 

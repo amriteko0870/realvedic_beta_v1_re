@@ -929,7 +929,7 @@ def adminStartPayment(request):
     order_data['delivery_charges'] = data['payment_details']['shipping']
     order_data['order_total'] = data['payment_details']['total']
     amount = order_data['order_total']
-    client = razorpay.Client(auth=('rzp_test_gHJS0k5aSWUMQc', '8hPVwKRnj4DZ7SB1wyW1miaf'))
+    client = razorpay.Client(auth=(os.getenv('key_id'),os.getenv('key_secret') ))
     payment = client.order.create({"amount": eval(str(amount)) * 100, 
                                    "currency": "INR", 
                                    "payment_capture": "1"})
@@ -979,7 +979,7 @@ def adminHandlePaymentSuccess(request):
             'razorpay_payment_id': raz_pay_id,
             'razorpay_signature': raz_signature
             }
-    client = razorpay.Client(auth=('rzp_test_gHJS0k5aSWUMQc', '8hPVwKRnj4DZ7SB1wyW1miaf'))
+    client = razorpay.Client(auth=(os.getenv('key_id'),os.getenv('key_secret') ))
     check = client.utility.verify_payment_signature(data)
     if not check:
         order = PaymentOrder.objects.filter(order_payment_id=ord_id).delete()

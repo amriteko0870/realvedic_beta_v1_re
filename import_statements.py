@@ -10,6 +10,7 @@ import random
 import json
 import PIL
 from PIL import Image
+from dotenv import load_dotenv
 
 #-------------------------Django Modules---------------------------------------------
 from django.http import Http404, HttpResponse, JsonResponse,FileResponse
