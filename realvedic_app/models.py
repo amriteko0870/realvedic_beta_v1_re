@@ -156,11 +156,5 @@ class cart_notification(models.Model):
     message = models.TextField()
 
 
-
-
-
-
-
-
-
-
+class shipping_price(models.Model):
+    price = models.IntegerField()

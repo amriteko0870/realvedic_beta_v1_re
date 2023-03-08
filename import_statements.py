@@ -43,7 +43,7 @@ from realvedic_app.models import categoryy
 from realvedic_app.models import noLoginUser
 from realvedic_app.models import PaymentOrder
 from realvedic_app.models import cart_notification
-
+from realvedic_app.models import shipping_price
 # -------------------------- admin model ---------------------------------------------
 from admin_realvedic_app.models import admin_login
 from admin_realvedic_app.models import actionLogs

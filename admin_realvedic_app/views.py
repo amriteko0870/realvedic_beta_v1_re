@@ -641,10 +641,13 @@ def updateAddedProducts(request):
     res['added_products'] = added_products
     if len(added_products) > 0:
         payment = pd.DataFrame(added_products)
+        sub_total = sum(list(payment['price']))
+        shipping = shipping_price.objects.values().last()['price'] if sub_total < 500 else 0
+        total = sub_total + shipping
         payment_details =  {
-                                'sub_total': sum(list(payment['price'])),
-                                'shipping': 0,
-                                'total': sum(list(payment['price'])) + 0,
+                                'sub_total': sub_total,
+                                'shipping': shipping,
+                                'total': total,
                             }
     else:
         payment_details =  {
@@ -682,10 +685,13 @@ def updateAddedProductsQuantity(request):
     res['added_products'] = added_products
     if len(added_products) > 0:
         payment = pd.DataFrame(added_products)
+        sub_total = sum(list(payment['price']))
+        shipping = shipping_price.objects.values().last()['price'] if sub_total < 500 else 0
+        total = sub_total + shipping
         payment_details =  {
-                                'sub_total': sum(list(payment['price'])),
-                                'shipping': 0,
-                                'total': sum(list(payment['price'])) + 0,
+                                'sub_total': sub_total,
+                                'shipping': shipping,
+                                'total': total,
                             }
     else:
         payment_details =  {
@@ -714,10 +720,13 @@ def updateAddedProductsDelete(request):
     res['added_products'] = added_products
     if len(added_products) > 0:
         payment = pd.DataFrame(added_products)
+        sub_total = sum(list(payment['price']))
+        shipping = shipping_price.objects.values().last()['price'] if sub_total < 500 else 0
+        total = sub_total + shipping
         payment_details =  {
-                                'sub_total': sum(list(payment['price'])),
-                                'shipping': 0,
-                                'total': sum(list(payment['price'])) + 0,
+                                'sub_total': sub_total,
+                                'shipping': shipping,
+                                'total': total,
                             }
     else:
         payment_details =  {

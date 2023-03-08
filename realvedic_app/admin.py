@@ -1,5 +1,5 @@
 from django.contrib import admin
-from realvedic_app.models import Product_data,categoryy,images_and_banners,blogs,user_data,user_cart,user_address,PaymentOrder,doctor_info,noLoginUser
+from realvedic_app.models import Product_data,categoryy,images_and_banners,blogs,user_data,user_cart,user_address,PaymentOrder,doctor_info,noLoginUser,shipping_price
 
 # Register your models here.
 #admin.site.register(Seller_details)
@@ -16,4 +16,5 @@ admin.site.register(user_address)
 admin.site.register(PaymentOrder)
 admin.site.register(doctor_info)
 admin.site.register(noLoginUser)
+admin.site.register(shipping_price)
 

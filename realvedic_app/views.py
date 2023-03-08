@@ -393,7 +393,7 @@ def UserCartView(request):
         cart_total = {}
         cartItems = pd.DataFrame(cartItems)
         cart_total['subtotal'] = sum(list(cartItems['price']))
-        cart_total['shipping'] = 0
+        cart_total['shipping'] = shipping_price.objects.values().last()['price'] if cart_total['subtotal'] < 500 else 0
         # cart_total['tax'] = sum(list(cartItems['final_tax']))
         cart_total['final_price'] = cart_total['subtotal'] + cart_total['shipping']
         res['cart_total'] = cart_total
@@ -658,7 +658,7 @@ def checkout(request):
         res['items'] = cartItems[::-1]
         cartItems = pd.DataFrame(cartItems)
         res['item_total'] = sum(list(cartItems['price'])) 
-        res['delivery_charges'] = 0
+        res['delivery_charges'] = shipping_price.objects.values().last()['price'] if cart_total['subtotal'] < 500 else 0
         # res['tax'] = sum(list(cartItems['final_tax']))
         res['order_total'] = res['item_total'] + res['delivery_charges']
     else:
