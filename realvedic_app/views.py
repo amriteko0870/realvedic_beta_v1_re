@@ -896,3 +896,28 @@ def single_order_view(request):
     res['order_total'] = eval(order.order_product)['order_total']
     return Response(res)  
 
+@api_view(["GET"])
+def brand_page(request):
+    if request.method == 'GET':
+        cat_obj = categoryy.objects.values_list('id','category')
+        res = {}
+        for i in cat_obj:
+            if i[1] == 'All Products':
+                cat_name = i[1].replace(' ','_')
+                prod_obj = Product_data.objects.values('id','title','image','about','price','size')
+                prod_obj = pd.DataFrame(prod_obj)
+                prod_obj['image'] = prod_obj['image'].apply(lambda x : x.split(','))
+                prod_obj['price'] = prod_obj['price'].apply(lambda x : x.split('|')[0])
+                prod_obj['size'] = prod_obj['size'].apply(lambda x : x.split('|')[0])
+                prod_obj = prod_obj.to_dict(orient='record')
+                res[cat_name] = prod_obj
+            else:
+                cat_name = i[1].replace(' ','_')
+                prod_obj = Product_data.objects.filter(category = i[0]).values('id','title','image','about','price','size')
+                prod_obj = pd.DataFrame(prod_obj)
+                prod_obj['image'] = prod_obj['image'].apply(lambda x : x.split(','))
+                prod_obj['price'] = prod_obj['price'].apply(lambda x : x.split('|')[0])
+                prod_obj['size'] = prod_obj['size'].apply(lambda x : x.split('|')[0])
+                prod_obj = prod_obj.to_dict(orient='record')
+                res[cat_name] = prod_obj
+        return Response(res)

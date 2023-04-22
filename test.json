@@ -1,7 +1,15 @@
 {
-  "token": "pbkdf2_sha256$320000$5k1H9IvGYnXiqVV5LeOR4a$s58kQ8bX5MADJpcFoYz/JYlX05c0RkqoEIlIQ+jPVlA=",
-  "name": "Health Mix",
-  "desktop_banner": "media/images/health_900x200.jpg",
-  "mobile_banner": "media/health_mobile.jpg",
-  "icon": "media/images/Health_Mix.svg"
+  "all_products": [
+    {
+      "id": 0,
+      "title": "",
+      "images": ["", "", ""],
+      "description": "",
+      "price": "",
+      "size":""
+    }
+  ],
+  "noodle_pasta": [],
+  "flour_pack": [],
+  "spice_blends": []
 }

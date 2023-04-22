@@ -33,5 +33,7 @@ urlpatterns = [
                 path('categoryPage2',t_views.categoryPage2,name='categoryPage2'),
                 path('write_data2',t_views.landing_page2,name='landing_page2'),
                 path('single_product_view2',t_views.single_product_view2,name='single_product_view2'),
-                path('recently_viewed_oc',t_views.recently_viewed_oc,name='recently_viewed_oc'),     
+                path('recently_viewed_oc',t_views.recently_viewed_oc,name='recently_viewed_oc'), 
+
+                path('brand_page',views.brand_page,name='brand_page'), 
               ]+static(settings.MEDIA_URL, document_root= settings.MEDIA_ROOT)
