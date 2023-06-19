@@ -1,15 +1,106 @@
-{
-  "all_products": [
-    {
-      "id": 0,
-      "title": "",
-      "images": ["", "", ""],
-      "description": "",
-      "price": "",
-      "size":""
-    }
-  ],
-  "noodle_pasta": [],
-  "flour_pack": [],
-  "spice_blends": []
-}
+[
+  {
+    "order_id": "Test1234",
+    "tracking_id": "312009822205",
+    "bank_ref_no": "1687005292259",
+    "order_status": "Success",
+    "failure_message": "",
+    "payment_mode": "Net Banking",
+    "card_name": "AvenuesTest",
+    "status_code": "null",
+    "status_message": "Y",
+    "currency": "INR",
+    "amount": "1.00",
+    "billing_name": "Amrit",
+    "billing_address": "Test address",
+    "billing_city": "Bangalore",
+    "billing_state": "KA",
+    "billing_zip": "560029",
+    "billing_country": "India",
+    "billing_tel": "919988776655",
+    "billing_email": "demo@demo.com",
+    "delivery_name": "Amrit",
+    "delivery_address": "Test address",
+    "delivery_city": "Bangalore",
+    "delivery_state": "KA",
+    "delivery_zip": "560029",
+    "delivery_country": "India",
+    "delivery_tel": "919988776655",
+    "merchant_param1": "1",
+    "merchant_param2": "",
+    "merchant_param3": "",
+    "merchant_param4": "",
+    "merchant_param5": "",
+    "vault": "N",
+    "offer_type": "null",
+    "offer_code": "null",
+    "discount_value": "0.0",
+    "mer_amount": "1.00",
+    "eci_value": "null",
+    "retry": "N",
+    "response_code": "0",
+    "billing_notes": "",
+    "trans_date": "17/06/2023 18:04:54",
+    "bin_country": "\\x02\\x02"
+  },
+  {
+    "token": "pbkdf2_sha256$390000$rt1dUkQqG991Fn0vo320Dr$R9Q5CCMffjBZvX9AIxwqW9wqvcsJ3uF3BxgykhlXFB8=",
+    "personal_info": {
+      "first_name": "Ranganathan2",
+      "last_name": "Srinivasana2",
+      "email": "ranga@eko.com",
+      "phone_code": "91",
+      "phone_number": "8857445478"
+    },
+    "address_info": {
+      "address_line_1": "76 realvedic2",
+      "address_line_2": "kormangala 4th block",
+      "city": "kathmandu",
+      "state": "kathmandu",
+      "landmark": "BDA complex",
+      "pincode": "560029",
+      "country": "Nepal"
+    },
+    "items": [
+      {
+        "id": 339,
+        "product_id": "13",
+        "name": "Multigrain Atta",
+        "category": "Flour Packs",
+        "unit_price": 85,
+        "net_price": 73,
+        "price": 73,
+        "quantity": "1",
+        "size": "500 g",
+        "image": "media/multigrainatta1.png"
+      },
+      {
+        "id": 338,
+        "product_id": "12",
+        "name": "Angaya Podi",
+        "category": "Spice Blends",
+        "unit_price": 125,
+        "net_price": 108,
+        "price": 216,
+        "quantity": "2",
+        "size": "100 g",
+        "image": "media/angayapodi1.png"
+      },
+      {
+        "id": 337,
+        "product_id": "14",
+        "name": "Finger Millet Noodles",
+        "category": "Noodles",
+        "unit_price": 100,
+        "net_price": 86,
+        "price": 430,
+        "quantity": "5",
+        "size": "200 g",
+        "image": "media/fingermillet1.png"
+      }
+    ],
+    "item_total": 719,
+    "delivery_charges": 0,
+    "order_total": 719
+  }
+]
