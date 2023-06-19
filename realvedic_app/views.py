@@ -998,6 +998,15 @@ def payment_success(request):
                                     <p>Thank you for shopping</p>
                                 </body>
                                 </html>""")
+    elif res_data['order_status'] == 'Aborted':
+        return HttpResponse("""<html>
+                                <head>
+                                    <meta http-equiv="refresh" content="3; url='https://andaal.com/cart'" />
+                                </head>
+                                <body>
+                                    <p>Transaction Cancelled! Please try again</p>
+                                </body>
+                                </html>""")
     else:
         return HttpResponse("""<html>
                                 <head>
