@@ -959,7 +959,7 @@ def start_payment(request):
     p_currency = 'INR'
     p_amount = amount
     p_redirect_url = 'https://realvedic-api.andaal.com/payment_success'
-    p_cancel_url = 'https://realvedic-api.andaal.com/payment_cancel'
+    p_cancel_url = 'https://realvedic-api.andaal.com/payment_success'
     p_language = 'EN'
     p_billing_name = user.first_name
     p_billing_address = order_data['address_info']['address_line_1']+' '+order_data['address_info']['address_line_2']
