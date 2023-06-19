@@ -992,7 +992,7 @@ def payment_success(request):
         user_cart.objects.filter(user_id = order.user_id).delete()
         return HttpResponse("""<html>
                                 <head>
-                                    <meta http-equiv="refresh" content="1; url='https://www.andaal.com/'" />
+                                    <meta http-equiv="refresh" content="1; url='https://andaal.com/'" />
                                 </head>
                                 <body>
                                     <p>Thank you for shopping</p>
@@ -1001,7 +1001,7 @@ def payment_success(request):
     else:
         return HttpResponse("""<html>
                                 <head>
-                                    <meta http-equiv="refresh" content="3; url='https://www.andaal.com//cart'" />
+                                    <meta http-equiv="refresh" content="3; url='https://andaal.com/cart'" />
                                 </head>
                                 <body>
                                     <p>Payment Fail! Please try again</p>
