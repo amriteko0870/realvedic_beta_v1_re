@@ -23,6 +23,8 @@ from django.contrib.auth.hashers import make_password,check_password
 from django.db.models import Min, Max
 from django.db.models import Subquery
 from django.core.files.storage import FileSystemStorage
+from django.views.decorators.csrf import csrf_exempt
+
 #----------------------------restAPI--------------------------------------------------
 from rest_framework.decorators import parser_classes,api_view
 from rest_framework.parsers import MultiPartParser,FormParser

@@ -1,4 +1,5 @@
 from import_statements import *
+import realvedic_app.helper as helper
 
 #Putting data into database
 
@@ -658,7 +659,7 @@ def checkout(request):
         res['items'] = cartItems[::-1]
         cartItems = pd.DataFrame(cartItems)
         res['item_total'] = sum(list(cartItems['price'])) 
-        res['delivery_charges'] = shipping_price.objects.values().last()['price'] if cart_total['subtotal'] < 500 else 0
+        res['delivery_charges'] = shipping_price.objects.values().last()['price'] if res['item_total'] < 500 else 0
         # res['tax'] = sum(list(cartItems['final_tax']))
         res['order_total'] = res['item_total'] + res['delivery_charges']
     else:
@@ -753,45 +754,44 @@ def UserAccountEdit(request):
     return Response(res)
 
 
-@api_view(['POST'])
-def start_payment(request):
-    data = request.data
-    try:
-        token = data['token']
-        user = user_data.objects.get(token = token)
-        user_id = user.id
-        order_data = {}
-        order_data['address_info'] = data['address_info']
-        order_data['items'] = data['items']
-        order_data['item_total'] = data['item_total']
-        order_data['delivery_charges'] = data['delivery_charges']
-        order_data['order_total'] = data['order_total']
-    except:
-        res = {
-                'status':False,
-                'message':'Something went wrong',
-              }
-        return Response(res)
-    amount = order_data['order_total']
-    order_product = str(order_data['items'])
-    client = razorpay.Client(auth=(os.getenv('key_id'),os.getenv('key_secret') ))
-    payment = client.order.create({"amount": eval(str(amount)) * 100, 
-                                   "currency": "INR", 
-                                   "payment_capture": "1"})
-    order = PaymentOrder(
-                            order_product=order_data, 
-                            order_amount=amount, 
-                            order_payment_id=payment['id'],
-                            user_id=user_id
-                        )
-    order.save()
-    order_id = order.id
-    order_data = PaymentOrder.objects.filter(id = order_id).values().last()
-    data = {
-        "payment": payment,
-        "order": order_data
-    }
-    return Response(data)
+# @api_view(['POST'])
+# def start_payment(request):
+#     data = request.data
+#     try:
+#         token = data['token']
+#         user = user_data.objects.get(token = token)
+#         user_id = user.id
+#         order_data = {}
+#         order_data['address_info'] = data['address_info']
+#         order_data['items'] = data['items']
+#         order_data['item_total'] = data['item_total']
+#         order_data['delivery_charges'] = data['delivery_charges']
+#         order_data['order_total'] = data['order_total']
+#     except:
+#         res = {
+#                 'status':False,
+#                 'message':'Something went wrong',
+#               }
+#         return Response(res)
+#     amount = order_data['order_total']
+#     client = razorpay.Client(auth=(os.getenv('key_id'),os.getenv('key_secret') ))
+#     payment = client.order.create({"amount": eval(str(amount)) * 100, 
+#                                    "currency": "INR", 
+#                                    "payment_capture": "1"})
+#     order = PaymentOrder(
+#                             order_product=order_data, 
+#                             order_amount=amount, 
+#                             order_payment_id=payment['id'],
+#                             user_id=user_id
+#                         )
+#     order.save()
+#     order_id = order.id
+#     order_data = PaymentOrder.objects.filter(id = order_id).values().last()
+#     data = {
+#         "payment": payment,
+#         "order": order_data
+#     }
+#     return Response(data)
 
 
 @api_view(['POST'])
@@ -921,3 +921,96 @@ def brand_page(request):
                 prod_obj = prod_obj.to_dict(orient='record')
                 res[cat_name] = prod_obj
         return Response(res)
+    
+
+@api_view(['POST'])
+def start_payment(request):
+    data = request.data
+    print(data)
+    try:
+        token = data['token']
+        user = user_data.objects.get(token = token)
+        user_id = user.id
+        order_data = {}
+        order_data['address_info'] = data['address_info']
+        order_data['items'] = data['items']
+        order_data['item_total'] = data['item_total']
+        order_data['delivery_charges'] = data['delivery_charges']
+        order_data['order_total'] = data['order_total']
+    except:
+        res = {
+                'status':False,
+                'message':'Something went wrong',
+              }
+        return Response(res)
+    amount = order_data['order_total']
+    
+    order = PaymentOrder(
+                            order_product=order_data, 
+                            order_amount=amount, 
+                            order_payment_id='N/A',
+                            user_id=user_id
+                        )
+    order.save()
+    order_id = order.id
+    
+    p_merchant_id = "2336508"
+    p_order_id = order_id
+    p_currency = 'INR'
+    p_amount = amount
+    p_redirect_url = 'https://realvedic-api.andaal.com/payment_success'
+    p_cancel_url = 'https://realvedic-api.andaal.com/payment_cancel'
+    p_language = 'EN'
+    p_billing_name = user.first_name
+    p_billing_address = order_data['address_info']['address_line_1']+' '+order_data['address_info']['address_line_2']
+    p_billing_city = order_data['address_info']['city']
+    p_billing_state = order_data['address_info']['state']
+    p_billing_zip = order_data['address_info']['pincode']
+    p_billing_country = order_data['address_info']['country']
+    p_billing_tel = data['personal_info']['phone_number']
+    p_billing_email = data['personal_info']['email']
+    merchant_param1 = order_id
+
+    
+    
+    link = helper.link_creation(str(p_merchant_id),str(p_order_id),str(p_currency),str(p_amount),str(p_redirect_url),str(p_cancel_url),str(p_language),str(p_billing_name),str(p_billing_address),str(p_billing_city),str(p_billing_state),str(p_billing_zip),str(p_billing_country),str(p_billing_tel),str(p_billing_email),str(merchant_param1))
+    return Response(link)
+
+@csrf_exempt
+def payment_success(request):
+    data = request.POST['encResp']
+    res_data = helper.res(data)
+    print(res_data['merchant_param1'])
+    print(res_data['bank_ref_no'])
+    print(res_data['order_status'])
+    order = PaymentOrder.objects.get(id = res_data['merchant_param1'])
+    if res_data['order_status'] == 'Success':
+        order.isPaid = True
+        order.order_status = 'placed'
+        order.order_payment_id = res_data['bank_ref_no']
+        order.save()
+        user_cart.objects.filter(user_id = order.user_id).delete()
+        return HttpResponse("""<html>
+                                <head>
+                                    <meta http-equiv="refresh" content="1; url='https://www.andaal.com/'" />
+                                </head>
+                                <body>
+                                    <p>Thank you for shopping</p>
+                                </body>
+                                </html>""")
+    else:
+        return HttpResponse("""<html>
+                                <head>
+                                    <meta http-equiv="refresh" content="3; url='https://www.andaal.com//cart'" />
+                                </head>
+                                <body>
+                                    <p>Payment Fail! Please try again</p>
+                                </body>
+                                </html>""")
+
+
+@api_view(['POST'])
+def payment_cancel(request):
+    data = request.data
+    res_data = helper.res(data['encResp'])
+    return Response(res_data)
