@@ -1,6 +1,8 @@
 # ---------------- Keys ------------------------------------------
-accessCode = 'AVLA04KF94AB88ALBA' 	
-workingKey = 'F67B32AF1FDF264315E2CD3254D28030'
+# accessCode = 'AVLA04KF94AB88ALBA' # localhost:8080
+# workingKey = 'F67B32AF1FDF264315E2CD3254D28030'  # localhost:8080
+accessCode = 'AVFO04KE94CN66OFNC' # andaal 	
+workingKey = 'DE16C051DB632BEA851E1F882B8BCDD5' # andaal
 
 # ----------------  utils ------------------------------------------
 from Crypto.Cipher import AES

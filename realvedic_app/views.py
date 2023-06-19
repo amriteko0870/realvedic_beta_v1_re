@@ -958,8 +958,8 @@ def start_payment(request):
     p_order_id = order_id
     p_currency = 'INR'
     p_amount = amount
-    p_redirect_url = 'http://localhost:8001/payment_success'
-    p_cancel_url = 'http://localhost:8001/payment_cancel'
+    p_redirect_url = 'https://realvedic-api.andaal.com/payment_success'
+    p_cancel_url = 'https://realvedic-api.andaal.com/payment_cancel'
     p_language = 'EN'
     p_billing_name = user.first_name
     p_billing_address = order_data['address_info']['address_line_1']+' '+order_data['address_info']['address_line_2']
@@ -992,7 +992,7 @@ def payment_success(request):
         user_cart.objects.filter(user_id = order.user_id).delete()
         return HttpResponse("""<html>
                                 <head>
-                                    <meta http-equiv="refresh" content="1; url='http://localhost:8080'" />
+                                    <meta http-equiv="refresh" content="1; url='https://www.andaal.com/'" />
                                 </head>
                                 <body>
                                     <p>Thank you for shopping</p>
@@ -1001,7 +1001,7 @@ def payment_success(request):
     else:
         return HttpResponse("""<html>
                                 <head>
-                                    <meta http-equiv="refresh" content="3; url='http://localhost:8080/cart'" />
+                                    <meta http-equiv="refresh" content="3; url='https://www.andaal.com//cart'" />
                                 </head>
                                 <body>
                                     <p>Payment Fail! Please try again</p>
